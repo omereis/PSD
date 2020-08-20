@@ -1,3 +1,5 @@
+#ifndef	TRIG_PARAMS_H
+#define	TRIG_PARAMS_H
 
 #include <string>
 using namespace std;
@@ -30,3 +32,4 @@ private:
 	int32_t m_nDelay;
 	rp_acq_trig_src_t m_src;
 };
+#endif

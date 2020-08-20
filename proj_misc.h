@@ -7,7 +7,7 @@ using namespace std;
 #include "redpitaya/rp.h"
 
 rp_acq_sampling_rate_t rate_from_name (const string &strName);
-string samplig_rate_name (rp_acq_sampling_rate_t rate);
+string sampling_rate_name (rp_acq_sampling_rate_t rate);
 string decimation_name (rp_acq_decimation_t dec);
 rp_acq_decimation_t decimation_name (const string &strName);
 string trigger_source_name (rp_acq_trig_src_t src);

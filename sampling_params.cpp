@@ -1,5 +1,6 @@
 
 #include "sampling_params.h"
+#include "proj_misc.h"
 //-----------------------------------------------------------------------------
 TSamplingParams::TSamplingParams()
 {
@@ -67,5 +68,18 @@ void TSamplingParams::SetDecimation (rp_acq_decimation_t decimation)
 rp_acq_decimation_t TSamplingParams::GetDecimation () const
 {
     return (m_decimation);
+}
+//-----------------------------------------------------------------------------
+void TSamplingParams::LoadFromJson(Json::Value &obj)
+{
+}
+//-----------------------------------------------------------------------------
+string TSamplingParams::AsString ()
+{
+	string str;
+
+	str = "Sampling Rate: " + sampling_rate_name (GetRate()) + "\n";
+	str += "Decimation: " + decimation_name (GetDecimation()) + "\n";
+	return (str);
 }
 //-----------------------------------------------------------------------------

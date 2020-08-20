@@ -1,4 +1,10 @@
+#ifndef	SAMPLING_PARAMS_H
+#define	SAMPLING_PARAMS_H
+#include <string>
+using namespace std;
+#include <jsoncpp/json/json.h>
 #include "redpitaya/rp.h"
+
 /*
 typedef enum {
     RP_SMP_125M,     //!< Sample rate 125Msps; Buffer time length 131us; Decimation 1
@@ -29,6 +35,8 @@ public:
     bool operator== (const TSamplingParams &other) const;
     bool operator!= (const TSamplingParams &other) const;
     void Clear ();
+	void LoadFromJson(Json::Value &obj);
+	string AsString ();
 // getters / setters
     void SetRate (rp_acq_sampling_rate_t rate);
     rp_acq_sampling_rate_t GetRate () const;
@@ -40,3 +48,5 @@ private:
     rp_acq_sampling_rate_t m_rate;
     rp_acq_decimation_t m_decimation;
 };
+#endif
+

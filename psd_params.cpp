@@ -134,6 +134,7 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 	SetLong (obj["long"].asFloat());
 	SetShort (obj["short"].asFloat());
 	m_trigger.LoadFromJson(obj["trigger"]);
+	m_sampling_params.LoadFromJson (obj["sampling"]);
 	return (true);
 }
 //-----------------------------------------------------------------------------
@@ -144,5 +145,6 @@ void TPsdParams::print ()
 	printf ("Short Buffer: %g\n", GetShort());
 	printf ("Long Buffer: %g\n", GetLong ());
 	printf ("Trigger:\n%s\n", m_trigger.AsString().c_str());
+	printf ("Sampling:\n%s\n", m_sampling_params.AsString().c_str());
 }
 //-----------------------------------------------------------------------------

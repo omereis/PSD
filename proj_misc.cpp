@@ -12,7 +12,7 @@ string string_to_upper (const string &strBase)
     return (str);
 }
 //-----------------------------------------------------------------------------
-string samplig_rate_name (rp_acq_sampling_rate_t rate)
+string sampling_rate_name (rp_acq_sampling_rate_t rate)
 {
     string strName;
 
