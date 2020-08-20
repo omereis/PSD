@@ -1,0 +1,15 @@
+{
+    "trigger" : {
+        "level" : 10e-3,
+        "delay" : 100,
+        "source" : "RP_TRIG_SRC_CHA_PE"
+    },
+    "sampling" : {
+        "rate": "RP_SMP_125M",
+        "decimation" : "RP_DEC_1"
+    },
+    "samples" : 6250,
+    "iterations" : 10,
+    "short" : 200,
+    "long" : 500
+}
