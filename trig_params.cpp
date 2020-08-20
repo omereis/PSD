@@ -98,3 +98,10 @@ string TTriggerParams::AsString ()
 	return (str);
 }
 //-----------------------------------------------------------------------------
+void TTriggerParams::LoadFromJson(Json::Value &obj)
+{
+	SetLevel (obj["level"].asFloat());
+	SetDelay (obj["delay"].asInt());
+	SetTriggerSource (trigger_source_from_name(obj["source"].asString()));
+}
+//-----------------------------------------------------------------------------

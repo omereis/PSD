@@ -130,6 +130,10 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 
 	reader.parse (ifs, obj);
 	SetSamples (obj["samples"].asInt());
+	SetIterations (obj["iterations"].asInt());
+	SetLong (obj["long"].asFloat());
+	SetShort (obj["short"].asFloat());
+	m_trigger.LoadFromJson(obj["trigger"]);
 	return (true);
 }
 //-----------------------------------------------------------------------------

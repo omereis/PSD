@@ -127,7 +127,7 @@ string trigger_source_name (rp_acq_trig_src_t src)
 	return (str);
 }
 //-----------------------------------------------------------------------------
-rp_acq_trig_src_t rtigger_source_from_name (const string &strName)
+rp_acq_trig_src_t trigger_source_from_name (const string &strName)
 {
 	rp_acq_trig_src_t src;
     std::string str = string_to_upper(strName);

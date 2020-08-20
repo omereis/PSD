@@ -1,6 +1,7 @@
 
 #include <string>
 using namespace std;
+#include <jsoncpp/json/json.h>
 #include "redpitaya/rp.h"
 
 class TTriggerParams {
@@ -13,6 +14,7 @@ public:
 	bool operator!= (const TTriggerParams &other) const;
 	void Clear ();
 // I/O
+	void LoadFromJson(Json::Value &obj);
 	string AsString ();
 // getters/setters
 	void SetLevel (float fLevel);

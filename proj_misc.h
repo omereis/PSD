@@ -11,6 +11,6 @@ string samplig_rate_name (rp_acq_sampling_rate_t rate);
 string decimation_name (rp_acq_decimation_t dec);
 rp_acq_decimation_t decimation_name (const string &strName);
 string trigger_source_name (rp_acq_trig_src_t src);
-rp_acq_trig_src_t rtigger_source_from_name (const string &strName);
+rp_acq_trig_src_t trigger_source_from_name (const string &strName);
 void ExitWithError (const char * format, ...);
 #endif
