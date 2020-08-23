@@ -1,3 +1,17 @@
+/*
+#include <string>
+#include <sstream>
+
+namespace patch
+{
+    template < typename T > std::string to_string( const T& n )
+    {
+        std::ostringstream stm ;
+        stm << n ;
+        return stm.str() ;
+    }
+}
+*/
 
 #include "trig_params.h"
 #include "proj_misc.h"
@@ -92,6 +106,7 @@ string TTriggerParams::AsString ()
 {
 	string str;
 
+	//str = "Level: " + patch::to_string (1e3 * GetLevel()) + string (" milliVolts\n");
 	str = "Level: " + std::to_string (1e3 * GetLevel()) + string (" milliVolts\n");
 	str += "Delay: " + std::to_string (GetDelay()) + "\n";
 	str += "Source: " + trigger_source_name (GetTriggerSrc()) + "\n";

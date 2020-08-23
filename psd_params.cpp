@@ -34,6 +34,8 @@ bool TPsdParams::operator== (const TPsdParams &other) const
 		return (false);
     if (GetLong () != other.GetLong ())
 		return (false);
+    if (GetPulses () != other.GetPulses ())
+		return (false);
 	return (true);
 }
 //-----------------------------------------------------------------------------
@@ -50,6 +52,7 @@ void TPsdParams::Clear ()
     SetIterations (1000);
     SetShort (200);
     SetLong (500);
+	SetPulses (0);
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::AssignAll (const TPsdParams &other)
@@ -60,6 +63,7 @@ void TPsdParams::AssignAll (const TPsdParams &other)
     SetIterations (other.GetIterations ());
     SetShort (other.GetShort ());
     SetLong (other.GetLong ());
+	SetPulses (other.GetPulses ());
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetTrigger (const TTriggerParams &trigger)
@@ -133,6 +137,7 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 	SetIterations (obj["iterations"].asInt());
 	SetLong (obj["long"].asFloat());
 	SetShort (obj["short"].asFloat());
+	SetPulses(obj["pulses"].asInt());
 	m_trigger.LoadFromJson(obj["trigger"]);
 	m_sampling_params.LoadFromJson (obj["sampling"]);
 	return (true);
@@ -144,7 +149,19 @@ void TPsdParams::print ()
 	printf ("Iterations: %d\n", GetIterations());
 	printf ("Short Buffer: %g\n", GetShort());
 	printf ("Long Buffer: %g\n", GetLong ());
+	printf ("Pulses to save: %d\n", GetPulses ());
 	printf ("Trigger:\n%s\n", m_trigger.AsString().c_str());
 	printf ("Sampling:\n%s\n", m_sampling_params.AsString().c_str());
 }
+//-----------------------------------------------------------------------------
+void TPsdParams::SetPulses (int nPulses)
+{
+	m_nPulses = nPulses;
+}
+//-----------------------------------------------------------------------------
+int TPsdParams::GetPulses () const
+{
+	return (m_nPulses);
+}
+
 //-----------------------------------------------------------------------------

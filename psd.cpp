@@ -15,6 +15,7 @@ using namespace std;
 
 #include "redpitaya/rp.h"
 #include "psd_params.h"
+#include "psd_output.h"
 
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
@@ -37,6 +38,7 @@ struct InputParams {
 	short Print;
 };
 //-----------------------------------------------------------------------------
+void InitiateSampling (TPsdParams &params);
 int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, struct InputParams *in_params);
 void set_params_defaults (struct InputParams *in_params);
 void get_options (int argc, char **argv, struct InputParams *in_params);
@@ -54,8 +56,10 @@ void ExitWithError (const char * format, ...);
 int main(int argc, char **argv)
 {
 	TPsdParams m_params;
+	TPsdOutput out_params;
 	struct InputParams in_params;
 
+	system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
 	memset (&in_params, 0, sizeof (in_params));	
 	get_options (argc, argv, &in_params);
 	if (in_params.Help) {
@@ -67,30 +71,28 @@ int main(int argc, char **argv)
 	printf ("===========================================\n");
 	m_params.LoadFromJson ("psd_params.json");
 	m_params.print();
+	printf ("buff_size not set\n");
 	printf ("===========================================\n");
-	ExitWithError ("Quitting with error %d", 17);
         /* Print error, if rp_Init() function failed */
-	if(rp_Init() != RP_OK){
-		fprintf(stderr, "Rp api init failed!\n");
-	}
+	int nRpCode;
+	printf ("About to init rp\n");
+	nRpCode = rp_Init();
+	printf ("RP_Init code: %d\n", nRpCode);
+	if(nRpCode != RP_OK)
+	//if(rp_Init() != RP_OK)
+		ExitWithError ("Red Pitaya procedure 'rp_ini' failed");
 
 /*************************************************************/
         /*LOOB BACK FROM OUTPUT 2 - ONLY FOR TESTING*/
 	uint32_t buff_size = in_params.Samples;//6250;//12500;//16384;//8192;//16384;
+	printf ("buff_size set: %d\n", buff_size);
 	float *afBuff;
 
 	afBuff = (float*) calloc(buff_size, sizeof(afBuff[0]));
 
-	rp_AcqReset();
-	if (rp_AcqSetDecimation(RP_DEC_1/*1*/) != RP_OK)
-		printf("Error setting decimation\n");;
-	if (rp_AcqSetSamplingRate(RP_SMP_125M) != RP_OK)
-		printf ("Setting sampleing rate error\n");
-	rp_AcqSetTriggerLevel(RP_CH_1, in_params.Trigger); //Trig level is set in Volts while in SCPI
-	rp_AcqSetTriggerDelay(in_params.Delay);
-	rp_AcqSetTriggerSrc(RP_TRIG_SRC_CHA_PE);
-	if (rp_AcqSetDecimation(RP_DEC_1) != RP_OK)
-		printf("Error setting decimation\n");
+	printf ("Sampling paramateres NOT initiated\n");
+	InitiateSampling (m_params);
+	printf ("Sampling paramateres initiated\n");
 
 	int nWaits, nValids/*, fPrint, iBiggest*/;
 	double d = ((double) in_params.Delay * -1.0) + 8188.0;
@@ -111,6 +113,8 @@ int main(int argc, char **argv)
 	nStart = 0;
 	for (k=0, nValids=0 ; k < in_params.Iterations ; k++) {
 		if (read_input_volts (afBuff, buff_size, &nWaits, &in_params) > 0) {
+			if (out_params.PulsesCount() < (uint32_t) m_params.GetPulses())
+				out_params.AddSamples (afBuff, buff_size);
 			dSamplesMax = dSum = afBuff[0];
 			for (j=1 ; j < 100+300 ; j++) {
 				dSamplesMax = max (afBuff[j], dSamplesMax);
@@ -167,6 +171,21 @@ int main(int argc, char **argv)
 	delete[] adShort;
 	rp_Release();
 	return 0;
+}
+//-----------------------------------------------------------------------------
+void InitiateSampling (TPsdParams &params)
+{
+	rp_AcqReset();
+	if (rp_AcqSetDecimation(params.GetSamplingParams().GetDecimation()) != RP_OK)
+	//if (rp_AcqSetDecimation(RP_DEC_1/*1*/) != RP_OK)
+		printf("Error setting decimation\n");;
+	if (rp_AcqSetSamplingRate(RP_SMP_125M) != RP_OK)
+		printf ("Setting sampleing rate error\n");
+	rp_AcqSetTriggerLevel(RP_CH_1, params.GetTrigger().GetLevel()); //Trig level is set in Volts while in SCPI
+	rp_AcqSetTriggerDelay(params.GetTrigger().GetDelay());
+	rp_AcqSetTriggerSrc(RP_TRIG_SRC_CHA_PE);
+	if (rp_AcqSetDecimation(RP_DEC_1) != RP_OK)
+		printf("Error setting decimation\n");
 }
 //-----------------------------------------------------------------------------
 void print_debug (const char *sz)

@@ -31,6 +31,8 @@ public:
     float GetShort () const;
     void SetLong (float rLong);
     float GetLong () const;
+	void SetPulses (int nPulses);
+	int GetPulses () const;
 protected:
     void AssignAll (const TPsdParams &other);
 private:
@@ -40,4 +42,5 @@ private:
     int m_nIterations;
     float m_rShort;
     float m_rLong;
+	int m_nPulses;
 };

@@ -1,6 +1,6 @@
 {
     "trigger" : {
-        "level" : 111e-3,
+        "level" : 10e-3,
         "delay" : 100,
         "source" : "RP_TRIG_SRC_CHA_PE"
     },
@@ -11,5 +11,6 @@
     "samples" : 6250,
     "iterations" : 100,
     "short" : 200,
-    "long" : 5000
+    "long" : 5000,
+	"pulses" : 10
 }

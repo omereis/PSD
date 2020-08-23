@@ -8,6 +8,10 @@ using namespace std;
 typedef vector<float> TFloatVec;
 #endif
 
+#ifndef  TFloatMatrix
+typedef vector<TFloatVec> TFloatMatrix;
+#endif
+
 #ifndef  TIntVec
 typedef vector<int> TIntVec;
 #endif
