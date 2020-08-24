@@ -39,7 +39,8 @@ struct InputParams {
 };
 //-----------------------------------------------------------------------------
 void InitiateSampling (TPsdParams &params);
-int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, struct InputParams *in_params);
+int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/* , struct InputParams  *_params */);
+//int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, struct InputParams *_params);
 void set_params_defaults (struct InputParams *in_params);
 void get_options (int argc, char **argv, struct InputParams *in_params);
 void print_usage();
@@ -52,69 +53,108 @@ void calc_histogram (float *adResults, uint32_t nSize, int nBins, int fUseZero, 
 void print_debug (const char *sz);
 void set_files_extensions (struct InputParams *in_params);
 void ExitWithError (const char * format, ...);
+bool read_fast_analog (float *buff, uint32_t buff_size);
 //-----------------------------------------------------------------------------
 int main(int argc, char **argv)
+{
+	TPsdParams m_params;
+
+	printf ("RF input reader\n");
+	system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
+	if(rp_Init() != RP_OK){
+		fprintf(stderr, "Rp api init failed!\n");
+	}
+
+	printf ("===========================================\n");
+	m_params.LoadFromJson ("psd_params.json");
+	m_params.print();
+	printf ("===========================================\n");
+
+	uint32_t buff_size = m_params.GetSamples();
+	float *buff = new float[buff_size];;
+	//float *buff = (float *)malloc(buff_size * sizeof(float));
+
+	rp_AcqReset();
+	rp_AcqSetDecimation(m_params.GetSamplingParams().GetDecimation());
+	rp_AcqSetTriggerLevel(RP_CH_1, m_params.GetTrigger().GetLevel());
+	rp_AcqSetSamplingRate (RP_SMP_125M);
+	rp_AcqSetTriggerDelay(0);
+
+	//for (int n=0 ; n < 10 ; n++) {
+	for (int n=0 ; n < m_params.GetIterations() ; n++) {
+		read_fast_analog (buff, buff_size);
+		printf ("End of iteration %d\n", n + 1);
+	}
+	delete[] buff;
+	//free(buff);
+	rp_Release();
+	return 0;
+}
+
+int main1(int argc, char **argv)
 {
 	TPsdParams m_params;
 	TPsdOutput out_params;
 	struct InputParams in_params;
 
 	system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
-	memset (&in_params, 0, sizeof (in_params));	
-	get_options (argc, argv, &in_params);
-	if (in_params.Help) {
+	//memset (&in_params, 0, sizeof (in_params));	
+	//get_options (argc, argv, &in_params);
+/**/
+	
+/*if (in_params.Help) {
 		print_usage();
 		exit(0);
 	}
+*/
 
 	print_params (&in_params);
+/**/
 	printf ("===========================================\n");
 	m_params.LoadFromJson ("psd_params.json");
 	m_params.print();
-	printf ("buff_size not set\n");
 	printf ("===========================================\n");
         /* Print error, if rp_Init() function failed */
 	int nRpCode;
-	printf ("About to init rp\n");
 	nRpCode = rp_Init();
-	printf ("RP_Init code: %d\n", nRpCode);
 	if(nRpCode != RP_OK)
-	//if(rp_Init() != RP_OK)
-		ExitWithError ("Red Pitaya procedure 'rp_ini' failed");
+		ExitWithError ("Red Pitaya procedure 'rp_ini' failed with error code %d", nRpCode);
 
 /*************************************************************/
         /*LOOB BACK FROM OUTPUT 2 - ONLY FOR TESTING*/
-	uint32_t buff_size = in_params.Samples;//6250;//12500;//16384;//8192;//16384;
+	uint32_t buff_size = m_params.GetSamples();//in_params.Samples;//6250;//12500;//16384;//8192;//16384;
 	printf ("buff_size set: %d\n", buff_size);
 	float *afBuff;
 
 	afBuff = (float*) calloc(buff_size, sizeof(afBuff[0]));
 
-	printf ("Sampling paramateres NOT initiated\n");
 	InitiateSampling (m_params);
-	printf ("Sampling paramateres initiated\n");
 
-	int nWaits, nValids/*, fPrint, iBiggest*/;
-	double d = ((double) in_params.Delay * -1.0) + 8188.0;
-	float dSum=0;
-	int j, k, nStart = (int) d;//(nDelay * -124.9) + 8188, fPrint; // from measurements
-	float *adLong, *adShort, dHistMin=0, dHistMax=0, dSamplesMax;//, dBiggest;
+	int nWaits;
+	//double d = ((double) in_params.Delay * -1.0) + 8188.0;
+	//float dSum=0;
+	//int j, k;(nDelay * -124.9) + 8188, fPrint; // from measurements
+	float *adLong, *adShort, dHistMin=0, dHistMax=0;//, dSamplesMax, dBiggest;
 /*
 	float **mtx = (float**) calloc (100, sizeof (mtx[0]));
 	for (j=0 ; j < 100 ; j++)
 		mtx[j] = (float*) calloc(buff_size, sizeof (mtx[0][0]));
 */
 
-	adLong= new float[in_params.Iterations];//calloc (in_params.Iterations, sizeof (adResults[0]));
-	adShort = new float[in_params.Iterations];//calloc (in_params.Iterations, sizeof (adResults[0]));
-	float *adMax = new float[in_params.Iterations];
-	nStart = 0;
-	printf("d=%g, nStart=%d, buf_size=%d\n", d, nStart, buff_size);
-	nStart = 0;
-	for (k=0, nValids=0 ; k < in_params.Iterations ; k++) {
-		if (read_input_volts (afBuff, buff_size, &nWaits, &in_params) > 0) {
-			if (out_params.PulsesCount() < (uint32_t) m_params.GetPulses())
+	adLong= new float[m_params.GetIterations()];
+	adShort = new float[m_params.GetIterations()];
+	//adLong= new float[in_params.Iterations];//calloc (in_params.Iterations, sizeof (adResults[0]));
+	//adShort = new float[in_params.Iterations];//calloc (in_params.Iterations, sizeof (adResults[0]));
+	//float *adMax = new float[m_params.GetIterations()];
+	//float *adMax = new float[in_params.Iterations];
+	//for (k=0, nValids=0 ; k < in_params.Iterations ; k++) {
+	for (int k=0 ; k < m_params.GetIterations() ; k++) {
+		//if (read_input_volts (afBuff, buff_size, &nWaits, m_params) > 0) {
+		if (read_input_volts (afBuff, buff_size, &nWaits) > 0) {
+		//if (read_input_volts (afBuff, buff_size, &nWaits, &in_params) > 0) {
+			//if (out_params.PulsesCount() < (uint32_t) m_params.GetPulses())
 				out_params.AddSamples (afBuff, buff_size);
+/*
 			dSamplesMax = dSum = afBuff[0];
 			for (j=1 ; j < 100+300 ; j++) {
 				dSamplesMax = max (afBuff[j], dSamplesMax);
@@ -123,33 +163,39 @@ int main(int argc, char **argv)
 					adShort[k] = dSum;
 			}
 			adLong[k] = dSum;
+*/
 /*
 			if (k < 100) {
 				for (j=0 ; j < (int) buff_size ; j++)
 					mtx[k][j] = afBuff[j];
 			}
 */
+/*
 			adMax[k] = dSamplesMax;
 			nValids++;
 			if ((nValids == 0) && (in_params.Print)) {
 				print_buffer_volts (afBuff, buff_size, in_params.FileName);
 			}
+*/
 		}
 		if ((k % 100) == 0)
 			fprintf (stderr, "Completed %d iterations, Max: %g, Min: %g\r", k, dHistMax, dHistMin);
 	}
 	printf ("\n");
+	printf ("Reading completed, read %d pulses\n", out_params.PulsesCount());
 //	calc_histogram (adResults, in_params.Iterations, 1024, 0, "hist_sum.csv");
 	//calc_histogram (adResults, in_params.Iterations, 1024, 0, in_params.HistFile);
 //	calc_histogram (adMax, in_params.Iterations, 1024, 1, "hist_max.csv");
 	fprintf (stderr, "histogram calculated\n");
 	printf ("\n");
 
+/*
 	FILE *f = fopen ("spsd.csv", "w+");
 	fprintf (f, "n, short, long, max\n");
 	for (int n=0 ; n < in_params.Iterations ; n++)
 		fprintf (f, "%d,%g,%g, %g\n", n+1, adLong[n], adShort[n], adMax[n]);
 	fclose (f);
+*/
 /*
 	f = fopen ("hundred.csv", "w+");
 	std::string str;
@@ -196,15 +242,27 @@ void print_debug (const char *sz)
 }
 int nDebug=1;
 //-----------------------------------------------------------------------------
-int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, struct InputParams *in_params)
+//int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, TPsdParams &params)
+int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/*, struct InputParams *in_params*/)
 {
 	time_t tStart, tNow;
 	bool fTrigger, fTimeLimit;
 	rp_acq_trig_state_t state = RP_TRIG_STATE_WAITING;
 
 	rp_AcqStart();
-	usleep(1);
 	rp_AcqSetTriggerSrc(RP_TRIG_SRC_CHA_PE);
+	rp_AcqReset();
+	rp_AcqSetDecimation(RP_DEC_1);
+	rp_AcqSetTriggerLevel(RP_CH_1, 10e-3); //Trig level is set in Volts while in SCPI
+	rp_AcqSetSamplingRate (RP_SMP_125M);
+		
+	rp_AcqSetTriggerDelay(0);
+	rp_AcqSetTriggerSrc(RP_TRIG_SRC_CHA_PE);
+
+	rp_AcqStart();
+
+
+	usleep(1);
 	time(&tStart);
 	fTrigger = fTimeLimit = false;
 	while((!fTrigger) && (!fTimeLimit)){
@@ -228,6 +286,7 @@ int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, struct Inpu
 	rp_AcqStop ();
 	return (fTrigger);
 }
+/**/
 //-----------------------------------------------------------------------------
 void get_options (int argc, char **argv, struct InputParams *in_params)
 {
@@ -275,6 +334,7 @@ void get_options (int argc, char **argv, struct InputParams *in_params)
 		}
 	set_files_extensions (in_params);
 } 
+/**/
 //-----------------------------------------------------------------------------
 char *add_file_extension (char *szFileName)
 {
@@ -425,5 +485,43 @@ void calc_histogram (float *adResults, uint32_t nSize, int nBins, int fUseZero, 
 		fprintf (file, "%d\n", anHistogram[n]);
 	fclose(file);
 	free (anHistogram);
+}
+
+bool read_fast_analog (float *buff, uint32_t buff_size)
+{
+	rp_acq_trig_state_t state = RP_TRIG_STATE_TRIGGERED;
+	time_t tStart, tNow;
+	bool fTrigger = false, fTimeout = false;
+
+	rp_AcqStart();
+	usleep(1);
+	rp_AcqSetTriggerSrc(RP_TRIG_SRC_CHA_PE);
+	time (&tStart);
+	while((fTrigger == false) && (fTimeout == false)){
+		rp_AcqGetTriggerState(&state);
+		if(state == RP_TRIG_STATE_TRIGGERED){
+			fTrigger = true;
+		}
+		else {
+			time (&tNow);
+			if (difftime (tNow, tStart) >= 3)
+				fTimeout = true;
+		}
+	}
+	if (fTrigger) {
+		uint32_t nTrigPos;
+		rp_AcqGetWritePointerAtTrig (&nTrigPos);
+		rp_AcqGetDataV(RP_CH_1, nTrigPos-100, &buff_size, buff); // 80 nSec before trigger
+	}
+	else
+		printf ("Timeout\n");
+
+/*
+	int i;
+	for(i = 0; i < 10; i++){
+		printf("%f\n", buff[i]);
+	}
+*/
+	return (fTrigger);
 }
 //-----------------------------------------------------------------------------
