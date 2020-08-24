@@ -21,3 +21,4 @@ uint32_t TPsdOutput::PulsesCount () const
 	return ((uint32_t) m_mtxOut.size());
 }
 
+
