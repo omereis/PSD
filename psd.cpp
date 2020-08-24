@@ -74,13 +74,8 @@ int main(int argc, char **argv)
 	float *buff = new float[buff_size];;
 	//float *buff = (float *)malloc(buff_size * sizeof(float));
 
-	rp_AcqReset();
-	rp_AcqSetDecimation(m_params.GetSamplingParams().GetDecimation());
-	rp_AcqSetTriggerLevel(RP_CH_1, m_params.GetTrigger().GetLevel());
-	rp_AcqSetSamplingRate (RP_SMP_125M);
-	rp_AcqSetTriggerDelay(0);
+	InitiateSampling (m_params);
 
-	//for (int n=0 ; n < 10 ; n++) {
 	for (int n=0 ; n < m_params.GetIterations() ; n++) {
 		read_fast_analog (buff, buff_size);
 		printf ("End of iteration %d\n", n + 1);
@@ -91,147 +86,21 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-int main1(int argc, char **argv)
-{
-	TPsdParams m_params;
-	TPsdOutput out_params;
-	struct InputParams in_params;
-
-	system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
-	//memset (&in_params, 0, sizeof (in_params));	
-	//get_options (argc, argv, &in_params);
-/**/
-	
-/*if (in_params.Help) {
-		print_usage();
-		exit(0);
-	}
-*/
-
-	print_params (&in_params);
-/**/
-	printf ("===========================================\n");
-	m_params.LoadFromJson ("psd_params.json");
-	m_params.print();
-	printf ("===========================================\n");
-        /* Print error, if rp_Init() function failed */
-	int nRpCode;
-	nRpCode = rp_Init();
-	if(nRpCode != RP_OK)
-		ExitWithError ("Red Pitaya procedure 'rp_ini' failed with error code %d", nRpCode);
-
-/*************************************************************/
-        /*LOOB BACK FROM OUTPUT 2 - ONLY FOR TESTING*/
-	uint32_t buff_size = m_params.GetSamples();//in_params.Samples;//6250;//12500;//16384;//8192;//16384;
-	printf ("buff_size set: %d\n", buff_size);
-	float *afBuff;
-
-	afBuff = (float*) calloc(buff_size, sizeof(afBuff[0]));
-
-	InitiateSampling (m_params);
-
-	int nWaits;
-	//double d = ((double) in_params.Delay * -1.0) + 8188.0;
-	//float dSum=0;
-	//int j, k;(nDelay * -124.9) + 8188, fPrint; // from measurements
-	float *adLong, *adShort, dHistMin=0, dHistMax=0;//, dSamplesMax, dBiggest;
-/*
-	float **mtx = (float**) calloc (100, sizeof (mtx[0]));
-	for (j=0 ; j < 100 ; j++)
-		mtx[j] = (float*) calloc(buff_size, sizeof (mtx[0][0]));
-*/
-
-	adLong= new float[m_params.GetIterations()];
-	adShort = new float[m_params.GetIterations()];
-	//adLong= new float[in_params.Iterations];//calloc (in_params.Iterations, sizeof (adResults[0]));
-	//adShort = new float[in_params.Iterations];//calloc (in_params.Iterations, sizeof (adResults[0]));
-	//float *adMax = new float[m_params.GetIterations()];
-	//float *adMax = new float[in_params.Iterations];
-	//for (k=0, nValids=0 ; k < in_params.Iterations ; k++) {
-	for (int k=0 ; k < m_params.GetIterations() ; k++) {
-		//if (read_input_volts (afBuff, buff_size, &nWaits, m_params) > 0) {
-		if (read_input_volts (afBuff, buff_size, &nWaits) > 0) {
-		//if (read_input_volts (afBuff, buff_size, &nWaits, &in_params) > 0) {
-			//if (out_params.PulsesCount() < (uint32_t) m_params.GetPulses())
-				out_params.AddSamples (afBuff, buff_size);
-/*
-			dSamplesMax = dSum = afBuff[0];
-			for (j=1 ; j < 100+300 ; j++) {
-				dSamplesMax = max (afBuff[j], dSamplesMax);
-				dSum += afBuff[j];
-				if (j == 100+100)
-					adShort[k] = dSum;
-			}
-			adLong[k] = dSum;
-*/
-/*
-			if (k < 100) {
-				for (j=0 ; j < (int) buff_size ; j++)
-					mtx[k][j] = afBuff[j];
-			}
-*/
-/*
-			adMax[k] = dSamplesMax;
-			nValids++;
-			if ((nValids == 0) && (in_params.Print)) {
-				print_buffer_volts (afBuff, buff_size, in_params.FileName);
-			}
-*/
-		}
-		if ((k % 100) == 0)
-			fprintf (stderr, "Completed %d iterations, Max: %g, Min: %g\r", k, dHistMax, dHistMin);
-	}
-	printf ("\n");
-	printf ("Reading completed, read %d pulses\n", out_params.PulsesCount());
-//	calc_histogram (adResults, in_params.Iterations, 1024, 0, "hist_sum.csv");
-	//calc_histogram (adResults, in_params.Iterations, 1024, 0, in_params.HistFile);
-//	calc_histogram (adMax, in_params.Iterations, 1024, 1, "hist_max.csv");
-	fprintf (stderr, "histogram calculated\n");
-	printf ("\n");
-
-/*
-	FILE *f = fopen ("spsd.csv", "w+");
-	fprintf (f, "n, short, long, max\n");
-	for (int n=0 ; n < in_params.Iterations ; n++)
-		fprintf (f, "%d,%g,%g, %g\n", n+1, adLong[n], adShort[n], adMax[n]);
-	fclose (f);
-*/
-/*
-	f = fopen ("hundred.csv", "w+");
-	std::string str;
-	for (int n=0 ; n < (int) buff_size ; n++) {
-		for (int m=0 ; m < 100 ; m++) {
-			str += to_string (mtx[m][n]);
-			if (m < 99)
-				str += ",";
-		}
-		fprintf (f, "%s\n", str.c_str());
-		str = "";
-	}
-	fclose(f);
-	for (int m=0 ; m < 100 ; m++)
-		free (mtx[m]);
-	free (mtx);
-*/
-	delete[] adLong;
-	delete[] adShort;
-	rp_Release();
-	return 0;
-}
 //-----------------------------------------------------------------------------
 void InitiateSampling (TPsdParams &params)
 {
-	rp_AcqReset();
-	if (rp_AcqSetDecimation(params.GetSamplingParams().GetDecimation()) != RP_OK)
-	//if (rp_AcqSetDecimation(RP_DEC_1/*1*/) != RP_OK)
-		printf("Error setting decimation\n");;
-	if (rp_AcqSetSamplingRate(RP_SMP_125M) != RP_OK)
-		printf ("Setting sampleing rate error\n");
-	rp_AcqSetTriggerLevel(RP_CH_1, params.GetTrigger().GetLevel()); //Trig level is set in Volts while in SCPI
-	rp_AcqSetTriggerDelay(params.GetTrigger().GetDelay());
-	rp_AcqSetTriggerSrc(RP_TRIG_SRC_CHA_PE);
-	if (rp_AcqSetDecimation(RP_DEC_1) != RP_OK)
-		printf("Error setting decimation\n");
+	int nCode;
+
+	if ((nCode = rp_AcqReset()) != RP_OK)
+		ExitWithError ("Error in Reset. Code: %d\n", nCode);
+	if ((nCode = rp_AcqSetDecimation(params.GetSamplingParams().GetDecimation())) != RP_OK)
+		ExitWithError ("Error in Reset. Code: %d\n", nCode);
+	if ((nCode = rp_AcqSetTriggerLevel(RP_CH_1, params.GetTrigger().GetLevel())) != RP_OK)
+		ExitWithError ("Error in Reset. Code: %d\n", nCode);
+	if ((nCode = rp_AcqSetSamplingRate (RP_SMP_125M)) != RP_OK)
+		ExitWithError ("Error in Reset. Code: %d\n", nCode);
+	if ((nCode = rp_AcqSetTriggerDelay(0)) != RP_OK)
+		ExitWithError ("Error in Reset. Code: %d\n", nCode);
 }
 //-----------------------------------------------------------------------------
 void print_debug (const char *sz)
