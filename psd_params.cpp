@@ -36,6 +36,8 @@ bool TPsdParams::operator== (const TPsdParams &other) const
 		return (false);
     if (GetPulses () != other.GetPulses ())
 		return (false);
+	if (GetSaveRaw () != other.GetSaveRaw ())
+		return (false);
 	return (true);
 }
 //-----------------------------------------------------------------------------
@@ -53,6 +55,7 @@ void TPsdParams::Clear ()
     SetShort (200);
     SetLong (500);
 	SetPulses (0);
+	SetSaveRaw (0);
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::AssignAll (const TPsdParams &other)
@@ -64,6 +67,7 @@ void TPsdParams::AssignAll (const TPsdParams &other)
     SetShort (other.GetShort ());
     SetLong (other.GetLong ());
 	SetPulses (other.GetPulses ());
+	SetSaveRaw (other.GetSaveRaw());
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetTrigger (const TTriggerParams &trigger)
@@ -138,6 +142,7 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 	SetLong (obj["long"].asFloat());
 	SetShort (obj["short"].asFloat());
 	SetPulses(obj["pulses"].asInt());
+	SetSaveRaw (obj["print_raw"].asInt());
 	m_trigger.LoadFromJson(obj["trigger"]);
 	m_sampling_params.LoadFromJson (obj["sampling"]);
 	return (true);
@@ -163,5 +168,14 @@ int TPsdParams::GetPulses () const
 {
 	return (m_nPulses);
 }
-
+//-----------------------------------------------------------------------------
+void TPsdParams::SetSaveRaw(int nSaveRaw)
+{
+	m_nSaveRaw = nSaveRaw;
+}
+//-----------------------------------------------------------------------------
+int TPsdParams::GetSaveRaw () const
+{
+	return (m_nSaveRaw);
+}
 //-----------------------------------------------------------------------------

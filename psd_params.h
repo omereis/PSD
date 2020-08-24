@@ -33,6 +33,8 @@ public:
     float GetLong () const;
 	void SetPulses (int nPulses);
 	int GetPulses () const;
+	void SetSaveRaw(int nSaveRaw);
+	int GetSaveRaw () const;
 protected:
     void AssignAll (const TPsdParams &other);
 private:
@@ -43,4 +45,5 @@ private:
     float m_rShort;
     float m_rLong;
 	int m_nPulses;
+	int m_nSaveRaw;
 };
