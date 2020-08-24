@@ -9,8 +9,9 @@
         "decimation" : "RP_DEC_1"
     },
     "samples" : 6250,
-    "iterations" : 100,
+    "iterations" : 1,
     "short" : 200,
     "long" : 5000,
-	"pulses" : 10
+	"pulses" : 10,
+	"print_raw" : 0
 }
