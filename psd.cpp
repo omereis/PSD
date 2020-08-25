@@ -16,15 +16,9 @@ using namespace std;
 #include "redpitaya/rp.h"
 #include "psd_params.h"
 #include "psd_output.h"
+#include "proj_misc.h"
 
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#endif
-
+static const string s_strDefaultParamsJson ("psd_params.json");
 //-----------------------------------------------------------------------------
 struct InputParams {
 	short Help;
@@ -42,8 +36,8 @@ void InitiateSampling (TPsdParams &params);
 int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/* , struct InputParams  *_params */);
 //int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, struct InputParams *_params);
 void set_params_defaults (struct InputParams *in_params);
-void get_options (int argc, char **argv, struct InputParams *in_params);
-void print_usage();
+void get_options (int argc, char **argv, TPsdParams &params, string &strParamsJson, bool &fHelp);
+void print_usage(char *argv[], TPsdParams &params, const string &strParamsJson);
 void print_params (struct InputParams *in_params);
 void print_mote_buffer (float *buff, uint32_t buff_size, char *szFile);
 
@@ -58,30 +52,35 @@ bool read_fast_analog (float *buff, uint32_t buff_size);
 int main(int argc, char **argv)
 {
 	TPsdParams m_params;
+	TPsdOutput psd_results;
+	bool fHelp;
+	string strParamsJson (s_strDefaultParamsJson); 
 
+	get_options (argc, argv, m_params, strParamsJson, fHelp);
+	if (fHelp) {
+		print_usage(argv, m_params, s_strDefaultParamsJson);
+		exit (0);
+	}
 	printf ("RF input reader\n");
 	system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
 	if(rp_Init() != RP_OK){
 		fprintf(stderr, "Rp api init failed!\n");
 	}
-
 	printf ("===========================================\n");
 	m_params.LoadFromJson ("psd_params.json");
 	m_params.print();
 	printf ("===========================================\n");
+	psd_results.SetParams (m_params);
 
 	uint32_t buff_size = m_params.GetSamples();
 	float *buff = new float[buff_size];;
-	//float *buff = (float *)malloc(buff_size * sizeof(float));
-
 	InitiateSampling (m_params);
-
 	for (int n=0 ; n < m_params.GetIterations() ; n++) {
-		read_fast_analog (buff, buff_size);
+		if (read_fast_analog (buff, buff_size))
+			psd_results.HandleNew(buff, buff_size);
 		printf ("End of iteration %d\n", n + 1);
 	}
 	delete[] buff;
-	//free(buff);
 	rp_Release();
 	return 0;
 }
@@ -155,7 +154,80 @@ int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/*, struct In
 	rp_AcqStop ();
 	return (fTrigger);
 }
-/**/
+
+void get_options (int argc, char **argv, TPsdParams &params, string &strParamsJson , bool &fHelp)
+{
+	int c;
+/*
+commands
+	f - options file in JSON
+	h - help
+	i - iterations (-1 == inf)
+	j - input json parameters
+	l - long
+	n - samples (buffer length)
+	p - output psd results
+	r - output raw name
+	s - short length
+	t - trigger levet
+
+	w - raw pulses to save
+*/
+	//set_params_defaults (in_params);
+
+	fHelp = false;
+	while ((c = getopt (argc, argv, "hpt:n:f:d:i:s:H:")) != -1)
+		switch (c) {
+			case 'f':
+			case 'F':
+				strParamsJson = string(optarg);
+				break;
+			default:
+			case 'h':
+				fHelp = true;
+				break;
+			case 'i':
+			case 'I':
+				params.SetIterations(atoi(optarg));
+				break;
+			case 'j':
+			case 'J':
+				strParamsJson = string(optarg);
+				break;
+			case 'l':
+			case 'L':
+				params.SetLong (atof (optarg));
+				break;
+			case 'n':
+			case 'N':
+				params.SetSamples (atoi (optarg));
+				break;
+			case 'p':
+			case 'P':
+				params.SetPsdFile (optarg);
+				break;
+			case 'r':
+			case 'R':
+				params.SetSaveRaw (atoi(optarg));
+				break;
+			case 's':
+			case 'S':
+				params.SetShort (atof (optarg));
+				break;
+			case 't':
+			case 'T':
+				params.SetTriggerLevel (atof (optarg));
+				break;
+			case 'w':
+			case 'W':
+				params.SetRawFile(optarg);
+				break;
+		}
+} 
+
+
+
+/*
 //-----------------------------------------------------------------------------
 void get_options (int argc, char **argv, struct InputParams *in_params)
 {
@@ -203,7 +275,7 @@ void get_options (int argc, char **argv, struct InputParams *in_params)
 		}
 	set_files_extensions (in_params);
 } 
-/**/
+*/
 //-----------------------------------------------------------------------------
 char *add_file_extension (char *szFileName)
 {
@@ -233,21 +305,36 @@ void set_params_defaults (struct InputParams *in_params)
 	set_files_extensions (in_params);
 }
 //-----------------------------------------------------------------------------
-void print_usage()
+void print_usage(char *argv[], TPsdParams &params, const string &strParamsJson)
 {
-	const char *szMessage = "Red Pitaya RF input\n"
-					"Synopsis:\n"
-					"./rp_read -t <trigger [volts]> -n <# of samples> -f <output file name> -d <delay items> -i <# of iterations>\n\t  -s <sums file name> -H <histogram file name> -p print results\n"
-					"  \nDefaults:\n"
-					"    Trigger: 10mV:\n"
-					"    Samples: 10,000\n"
-					"    Delay  : 1250 data points\n"
-					"    File   : out.csv\n"
-					"    Histogram   : hist.csv\n"
-					"    Sums   : sums.csv\n"
-					"    Iterations: 10\n"
-					"    Print  : 0 (no)\n";
-	printf ("%s\n", szMessage);
+	string strUsage;
+	string strRawFile (params.GetRawFile());
+
+	if (strRawFile.length() == 0)
+	strRawFile = "(none)";
+
+	strUsage = 
+		string ("=======================================\n") +
+		string ("Red Pitaya PSD Analyzer\n") +
+		string ("Synopsis:\n") +
+		string (argv[0]) + string (" -h -i <iterations> -l <long> -n <samples> -p <output PSD> -r <output raw>\n") +
+		string ("        -s <short length> -t <trigger level> -w <raw pulses to save>\n") +
+		string ("Where\t\t\t\t\t| Defaults\n") +
+		string ("    f - Option File in JSON format.\t| ") + string("default: '") + strParamsJson + ("'\n") +
+		string ("    h - help\t\t\t\t| false\n") +
+		string ("    i - iterations (-1 == inf)\t\t| ") +  FormatWithComma(params.GetIterations()) + "\n" +
+		string ("    j - input json parameters\t\t| ") + strParamsJson + "\n" +
+		string ("    l - long persiod [nSec]\t\t| ") + to_string(params.GetLong()) + "\n" +
+		string ("    n - samples (buffer length)\t\t| ") + FormatWithComma (params.GetSamples()) + "\n" +
+		string ("    p - output psd results\t\t| ") + params.GetPsdFile() + "\n" +
+		string ("    r - output raw name\t\t\t| ") + strRawFile + "\n" +
+		string ("    s - short period [nSec]\t\t| ") + to_string(params.GetLong()) + "\n" +
+		string ("    t - trigger levet\t\t\t| ") + to_string(params.GetTrigger().GetLevel()) + "\n" +
+		string ("    w - raw pulses to save\t\t| ") +  to_string(params.GetSaveRaw()) + "\n" +
+		string ("=====================================================================\n");
+		//string ("Defaults:\n") +
+		//string ("    Iterations: ") + to_string(params.GetIterations());
+	printf ("%s\n", strUsage.c_str());
 }
 //-----------------------------------------------------------------------------
 void print_params (struct InputParams *in_params)
