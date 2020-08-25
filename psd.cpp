@@ -78,10 +78,13 @@ int main(int argc, char **argv)
 	for (int n=0 ; n < m_params.GetIterations() ; n++) {
 		if (read_fast_analog (buff, buff_size))
 			psd_results.HandleNew(buff, buff_size);
-		printf ("End of iteration %d\n", n + 1);
+		printf ("End of iteration %d\r", n + 1);
 	}
+	printf("\nReading done\n");
 	delete[] buff;
 	rp_Release();
+	psd_results.SaveResults ();
+	printf("Results Saved\n");
 	return 0;
 }
 
