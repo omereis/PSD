@@ -1,17 +1,3 @@
-/*
-#include <string>
-#include <sstream>
-
-namespace patch
-{
-    template < typename T > std::string to_string( const T& n )
-    {
-        std::ostringstream stm ;
-        stm << n ;
-        return stm.str() ;
-    }
-}
-*/
 
 #include "trig_params.h"
 #include "proj_misc.h"
@@ -31,7 +17,7 @@ TTriggerParams::TTriggerParams (float rLevel, int32_t nDelay, rp_acq_trig_src_t 
 {
     Clear ();
     m_rLevel = rLevel;
-    m_nDelay = nDelay;
+	SetDelay (nDelay);
     m_src    = src;
 }
 //-----------------------------------------------------------------------------
@@ -60,7 +46,7 @@ bool TTriggerParams::operator!= (const TTriggerParams &other) const
 void TTriggerParams::Clear ()
 {
 	SetLevel (10e-3);
-	SetDelay (100);
+	SetDelay (0);
 	SetTriggerSource (RP_TRIG_SRC_CHA_PE);
 }
 //-----------------------------------------------------------------------------
@@ -76,8 +62,7 @@ float TTriggerParams::GetLevel () const
 //-----------------------------------------------------------------------------
 void TTriggerParams::SetDelay (int32_t nDelay)
 {
-    if (m_nDelay >= 0)
-        m_nDelay = nDelay;
+	m_nDelay = (int32_t) nDelay;
 }
 //-----------------------------------------------------------------------------
 int32_t TTriggerParams::GetDelay () const
