@@ -38,6 +38,12 @@ bool TPsdParams::operator== (const TPsdParams &other) const
 		return (false);
 	if (GetSaveRaw () != other.GetSaveRaw ())
 		return (false);
+	if (GetJsonFile() != other.GetJsonFile())
+		return (false);
+	if (GetPsdFile() != other.GetPsdFile())
+		return (false);
+	if (GetRawFile() != other.GetRawFile())
+		return (false);
 	return (true);
 }
 //-----------------------------------------------------------------------------
@@ -56,6 +62,9 @@ void TPsdParams::Clear ()
     SetLong (500);
 	SetPulses (0);
 	SetSaveRaw (0);
+	SetJsonFile ("psd_params.json");
+	SetPsdFile("psd_results.csv");
+	SetRawFile ("");
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::AssignAll (const TPsdParams &other)
@@ -68,6 +77,9 @@ void TPsdParams::AssignAll (const TPsdParams &other)
     SetLong (other.GetLong ());
 	SetPulses (other.GetPulses ());
 	SetSaveRaw (other.GetSaveRaw());
+	SetJsonFile (other.GetJsonFile());
+	SetPsdFile (other.GetPsdFile());
+	SetRawFile (other.GetRawFile());
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetTrigger (const TTriggerParams &trigger)
@@ -177,5 +189,41 @@ void TPsdParams::SetSaveRaw(int nSaveRaw)
 int TPsdParams::GetSaveRaw () const
 {
 	return (m_nSaveRaw);
+}
+//-----------------------------------------------------------------------------
+void TPsdParams::SetJsonFile (const string &strJson)
+{
+	m_strJsonFile = strJson;
+}
+//-----------------------------------------------------------------------------
+string TPsdParams::GetJsonFile () const
+{
+	return (m_strJsonFile);
+}
+//-----------------------------------------------------------------------------
+void TPsdParams::SetPsdFile (const string &strPsdFile)
+{
+	m_strPsdFile = strPsdFile;
+}
+//void TPsdParams::SetPsdFile ("psd_results.csv");
+//-----------------------------------------------------------------------------
+string TPsdParams::GetPsdFile () const
+{
+	return (m_strPsdFile);
+}
+//-----------------------------------------------------------------------------
+void TPsdParams::SetTriggerLevel (float rTrigger)
+{
+	m_trigger.SetLevel (rTrigger);
+}
+//-----------------------------------------------------------------------------
+void TPsdParams::SetRawFile (const string &strFile)
+{
+	m_strRawFile = strFile;
+}
+//-----------------------------------------------------------------------------
+string TPsdParams::GetRawFile() const
+{
+	return (m_strRawFile);
 }
 //-----------------------------------------------------------------------------

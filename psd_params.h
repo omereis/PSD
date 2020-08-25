@@ -1,3 +1,5 @@
+#ifndef	_PSD_PARAMS_H
+#define	_PSD_PARAMS_H
 
 #include "bimam_types.h"
 #include <string>
@@ -5,6 +7,20 @@
 #include "trig_params.h"
 #include "sampling_params.h"
 using namespace std;
+
+/*
+commands
+	h - help
+	i - iterations (-1 == inf)
+	j - input json parameters
+	l - long
+	n - samples (buffer length)
+	p - output psd results
+	r - output raw name
+	s - short length
+	t - trigger levet
+	w - raw pulses to save
+*/
 
 class TPsdParams {
 public:
@@ -18,6 +34,8 @@ public:
 // I/O
 	bool LoadFromJson (const string &strJson);
 	void print ();
+
+	void SetTriggerLevel (float rTrigger);
 // getters/setters
     void SetTrigger (const TTriggerParams &trigger);
     TTriggerParams GetTrigger() const;
@@ -35,6 +53,12 @@ public:
 	int GetPulses () const;
 	void SetSaveRaw(int nSaveRaw);
 	int GetSaveRaw () const;
+	void SetJsonFile (const string &strJson);
+	string GetJsonFile () const;
+	void SetPsdFile (const string &strPsdFile);
+	string GetPsdFile () const;
+	void SetRawFile (const string &strFile);
+	string GetRawFile() const;
 protected:
     void AssignAll (const TPsdParams &other);
 private:
@@ -46,4 +70,8 @@ private:
     float m_rLong;
 	int m_nPulses;
 	int m_nSaveRaw;
+	string m_strJsonFile;
+	string m_strPsdFile;
+	string m_strRawFile;
 };
+#endif
