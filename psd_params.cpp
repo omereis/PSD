@@ -155,6 +155,7 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 	SetShort (obj["short"].asFloat());
 	SetPulses(obj["pulses"].asInt());
 	SetSaveRaw (obj["print_raw"].asInt());
+	SetRawFile (obj["raw_file"].asString());
 	m_trigger.LoadFromJson(obj["trigger"]);
 	m_sampling_params.LoadFromJson (obj["sampling"]);
 	return (true);
@@ -164,9 +165,12 @@ void TPsdParams::print ()
 {
 	printf ("Samples: %d\n", GetSamples ());
 	printf ("Iterations: %d\n", GetIterations());
-	printf ("Short Buffer: %g\n", GetShort());
-	printf ("Long Buffer: %g\n", GetLong ());
+	printf ("Short Buffer: %s\n", FormatEngineeringUnits (GetShort()).c_str());
+	printf ("Long Buffer: %s\n", FormatEngineeringUnits (GetLong ()).c_str());
+	printf ("PSD output file: '%s'\n", GetPsdFile().c_str());
 	printf ("Pulses to save: %d\n", GetPulses ());
+	printf ("Raw signals to save: %d\n", GetSaveRaw ());
+	printf ("Raw File Name: '%s'\n", GetRawFile().c_str());
 	printf ("Trigger:\n%s\n", m_trigger.AsString().c_str());
 	printf ("Sampling:\n%s\n", m_sampling_params.AsString().c_str());
 }
