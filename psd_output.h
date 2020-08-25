@@ -18,15 +18,18 @@ public:
 	void Clear ();
 	void SetParams (const TPsdParams &params);
 	TPsdParams GetParams() const;
-	void AddSamples (float *afBuffer, uint32_t nSize);
 	uint32_t PulsesCount () const;
 	void HandleNew(float *buff, uint32_t buff_size);
+	void SaveResults ();
+	void SaveRaw (const string &strFile);
+	void SavePsd (const string &strFile);
 protected:
+	void ConvertSamples (float *afBuffer, uint32_t nSize, TFloatVec &vSignal);
 	void AssignAll (const TPsdOutput &params);
 private:
 	TPsdParams m_params;
 	TFloatMatrix m_mtxOut;
-	TPsdOutParamsVec vPsdParams;
+	TPsdOutParamsVec m_vPsdParams;
 };
 #endif
 
