@@ -15,4 +15,5 @@ rp_acq_decimation_t decimation_name (const string &strName);
 string trigger_source_name (rp_acq_trig_src_t src);
 rp_acq_trig_src_t trigger_source_from_name (const string &strName);
 void ExitWithError (const char * format, ...);
+string FormatEngineeringUnits (double x);
 #endif

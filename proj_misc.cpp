@@ -199,4 +199,77 @@ string FormatWithComma (int num)
 	}
 	return (strResult);
 }
+
+string EngineeringNotation (int nLog)
+{
+	string str;
+
+	if (nLog == 3)
+		str = "Kilo";
+	else if (nLog == 6)
+		str = "Mega";
+	else if (nLog == 9)
+		str = "Giga";
+	else if (nLog == 12)
+		str = "Tera";
+	else if (nLog == -3)
+		str = "Milli";
+	else if (nLog == -6)
+		str = "Micro";
+	else if (nLog == -9)
+		str = "Nano";
+	else if (nLog == -12)
+		str = "Pico";
+	else
+		str = "";
+	return (str);
+}
+
+string FormatEngineeringUnits (double x)
+{
+	int exp = 0, sign = 1;
+	string strNum ;
+
+	if (x < 0.0) {
+		x = -x;
+		sign = -sign;
+    }
+	while (x >= 1000.0) {
+		x /= 1000.0;
+		exp += 3;
+	}
+	while (x < 1.0) {
+		x *= 1000.0;
+		exp -= 3;
+	}
+	if (sign < 0)
+		x = -x;
+	strNum = to_string(x) + " " + EngineeringNotation (exp);
+	return (strNum);
+/*
+	static char[] incPrefixes = new[] { 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' };
+	//static char[] decPrefixes = new[] { "milli", "micro", "nano"};
+	char[] decPrefixes = new[] { 'm', '\u03bc', 'n', 'p', 'f', 'a', 'z', 'y' };
+	double dLog, dNum;
+	int nLog;
+	srting strNum, strPostfix;
+
+	d = abs(d);
+	dLog = log10(d);
+	nLog = ((int) dLog) / 3;
+	nLog *= 3;
+	strNotation = EngineeringNotation (nLog);
+	if (nLog > 0) {
+		if (d > 1) {
+			dNum /= pow(10.0, double (nLog));
+		}
+		else if (d < 1) {
+		}
+	}
+	else {
+		dLog = log10(dLog);
+		nLogIdx = ((int) log10 (d)) / 3;
+	}
+*/
+}
 //-----------------------------------------------------------------------------
