@@ -18,6 +18,14 @@ TPsdOutParams TPsdOutParams::operator= (const TPsdOutParams &other)
 //-----------------------------------------------------------------------------
 bool TPsdOutParams::operator== (const TPsdOutParams &other) const
 {
+	if (GetShortSum () != other.GetShortSum ())
+		return (false);
+	if (GetLongSum () != other.GetLongSum ())
+		return (false);
+	if (GetAmp () != other.GetAmp ())
+		return (false);
+	if (GetPulseLength () != other.GetPulseLength ())
+		return (false);
     return (true);
 }
 //-----------------------------------------------------------------------------
@@ -28,12 +36,18 @@ bool TPsdOutParams::operator!= (const TPsdOutParams &other) const
 //-----------------------------------------------------------------------------
 void TPsdOutParams::Clear ()
 {
-
+	SetShortSum (0);
+	SetLongSum (0);
+	SetAmp (0);
+	SetPulseLength (0);
 }
 //-----------------------------------------------------------------------------
 void TPsdOutParams::AssignAll 	(const TPsdOutParams &other)
 {
-
+	SetShortSum (other.GetShortSum());
+	SetLongSum (other.GetLongSum());
+	SetAmp (other.GetAmp());
+	SetPulseLength (other.GetPulseLength());
 }
 //-----------------------------------------------------------------------------
 void TPsdOutParams::SetShortSum (double dShortSum)
