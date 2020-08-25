@@ -75,4 +75,8 @@ double TPsdOutParams::GetPulseLength () const
 {
     return (m_dPulseLength);
 }
+TPsdOutParamsVec::TPsdOutParamsVec ()
+	: TPsdOutParamsBaseVec ()
+{
+}
 //-----------------------------------------------------------------------------
