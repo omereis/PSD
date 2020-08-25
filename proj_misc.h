@@ -2,10 +2,12 @@
 #define  PROJ_MISC_H
 
 #include <string>
+#include <vector>
 using namespace std;
 
 #include "redpitaya/rp.h"
 
+string FormatWithComma (int num);
 rp_acq_sampling_rate_t rate_from_name (const string &strName);
 string sampling_rate_name (rp_acq_sampling_rate_t rate);
 string decimation_name (rp_acq_decimation_t dec);

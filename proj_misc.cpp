@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include "proj_misc.h"
+#include <algorithm>
 
 //-----------------------------------------------------------------------------
 string string_to_upper (const string &strBase)
@@ -168,5 +169,34 @@ Source: Example in http://www.cplusplus.com/reference/cstdio/vsprintf/
 	va_end (args);
 	fprintf (stderr, "%s\n", szBuffer);
 	exit (-1);
+}
+
+string FormatWithComma (int num)
+{
+	vector<string> vstr;
+	char sz[10];
+	const char *szFormat;
+	int n;
+	string strResult;
+
+	while (num > 0) {
+		n = num % 1000;
+		//printf ("num=%d, n=%d\n", num, n);
+		if (num >= 1000)
+			szFormat = "%03d";
+		else
+			szFormat = "%d";
+		sprintf (sz, szFormat, n);
+		//printf ("converted string:%s\n", sz);
+		vstr.push_back (string(sz));
+		num /= 1000;
+	}
+	reverse(vstr.begin(), vstr.end());
+	for (n=0 ; n < (int) vstr.size() ; n++) {
+		strResult += vstr[n];
+		if (n < (int) (vstr.size() - 1))
+			strResult += ",";
+	}
+	return (strResult);
 }
 //-----------------------------------------------------------------------------
