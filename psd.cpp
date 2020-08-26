@@ -58,18 +58,18 @@ int main(int argc, char **argv)
 	bool fHelp;
 	string strParamsJson (s_strDefaultParamsJson); 
 
-	get_options (argc, argv, m_params, strParamsJson, fHelp);
-	if (fHelp) {
-		print_usage(argv, m_params, s_strDefaultParamsJson);
-		exit (0);
-	}
-	printf ("RF input reader\n");
 	system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
+	printf ("RF input reader\n");
 	if(rp_Init() != RP_OK){
 		fprintf(stderr, "Rp api init failed!\n");
 	}
 	printf ("===========================================\n");
+	get_options (argc, argv, m_params, strParamsJson, fHelp);
 	m_params.LoadFromJson ("psd_params.json");
+	if (fHelp) {
+		print_usage(argv, m_params, s_strDefaultParamsJson);
+		exit (0);
+	}
 	m_params.print();
 	printf ("===========================================\n");
 	psd_results.SetParams (m_params);
@@ -239,59 +239,8 @@ commands
 				break;
 		}
 } 
-
-
-
-/*
 //-----------------------------------------------------------------------------
-void get_options (int argc, char **argv, struct InputParams *in_params)
-{
-	int c;
 
-	set_params_defaults (in_params);
-
-	while ((c = getopt (argc, argv, "hpt:n:f:d:i:s:H:")) != -1)
-		switch (c) {
-			default:
-			case 'h':
-				in_params->Help = 1;
-				return;
-			case 'p':
-			case 'P':
-				in_params->Print = 1;
-				break;
-			case 't':
-			case 'T':
-				in_params->Trigger = atof (optarg);
-				break;
-			case 'n':
-			case 'N':
-				in_params->Samples = atoi (optarg);
-				break;
-			case 'f':
-			case 'F':
-				strcpy (in_params->FileName, optarg);
-				break;
-			case 's':
-			case 'S':
-				strcpy (in_params->SumsFile, optarg);
-				break;
-			case 'H':
-				strcpy (in_params->HistFile, optarg);
-				break;
-			case 'd':
-			case 'D':
-				in_params->Delay = atoi(optarg);
-				break;
-			case 'i':
-			case 'I':
-				in_params->Iterations = atoi(optarg);
-				break;
-		}
-	set_files_extensions (in_params);
-} 
-*/
-//-----------------------------------------------------------------------------
 char *add_file_extension (char *szFileName)
 {
 	if (strchr(szFileName, '.') == NULL)
