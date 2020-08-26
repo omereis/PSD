@@ -273,3 +273,35 @@ string FormatEngineeringUnits (double x)
 */
 }
 //-----------------------------------------------------------------------------
+
+double WindowAverage (TFloatVec::const_iterator iStart, int nLength)
+{
+	double dAvg;
+	int n;
+	TFloatVec::const_iterator i;
+
+	for (i=iStart, n=0, dAvg = 0 ; n < nLength ; n++, i++)
+		dAvg += *i;
+	return (dAvg / (double) nLength);
+}
+//-----------------------------------------------------------------------------
+
+void MoveAverageFilter(const TFloatVec &vSignal, TFloatVec &vFiltered, int nWindow)
+{
+	int n, nHalfWin;
+	TFloatVec::const_iterator iSignal, iWindow;
+	TFloatVec::iterator iFiltered;
+
+	nHalfWin = (nWindow + 1) / 2;
+	nHalfWin = (nWindow) / 2;
+	vFiltered.resize (vSignal.size(), 0);
+	for (n=0, iSignal=vSignal.begin(), iFiltered=vFiltered.begin() ; n < nHalfWin ; n++, iSignal++, iFiltered++)
+		*iFiltered = *iSignal;
+	for (iWindow=vSignal.begin() ; n < (int) vSignal.size() - (nWindow / 2) ; iWindow++, iFiltered++, n++) {
+		*iFiltered = WindowAverage (iWindow, nWindow);
+		iSignal++;
+	}
+	for ( ; iSignal != vSignal.end() ; iSignal++, iFiltered++)
+		*iFiltered = *iSignal;
+}
+//-----------------------------------------------------------------------------

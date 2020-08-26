@@ -1,6 +1,7 @@
 #ifndef  PROJ_MISC_H
 #define  PROJ_MISC_H
 
+#include "bimam_types.h"
 #include <string>
 #include <vector>
 using namespace std;
@@ -16,4 +17,6 @@ string trigger_source_name (rp_acq_trig_src_t src);
 rp_acq_trig_src_t trigger_source_from_name (const string &strName);
 void ExitWithError (const char * format, ...);
 string FormatEngineeringUnits (double x);
+double WindowAverage (TFloatVec::const_iterator iStart, int nLength);
+void MoveAverageFilter(const TFloatVec &vSignal, TFloatVec &vFiltered, int nWindow);
 #endif
