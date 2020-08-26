@@ -1,5 +1,4 @@
 /* PSD - Pulse Shape Discrimination */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,6 +7,9 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdarg.h>
+#include <iostream>
+#include <chrono>
+#include <time.h>
 
 #include <iostream>
 #include <string>
@@ -72,17 +74,27 @@ int main(int argc, char **argv)
 	printf ("===========================================\n");
 	psd_results.SetParams (m_params);
 
+	int n, nValids;
 	uint32_t buff_size = m_params.GetSamples();
 	float *buff = new float[buff_size];;
+	clock_t tStart, tAccumulated;
 	InitiateSampling (m_params);
-	for (int n=0 ; n < m_params.GetIterations() ; n++) {
-		if (read_fast_analog (buff, buff_size))
+	for (n=0, nValids=0 ; n < m_params.GetIterations() ; n++) {
+		tAccumulated = 0;
+		if (read_fast_analog (buff, buff_size)) {
+			nValids++;
+			tStart = clock ();
 			psd_results.HandleNew(buff, buff_size);
-		printf ("End of iteration %d\r", n + 1);
+			tAccumulated += (clock() - tStart);
+		}
+		printf ("%d iterations completed\r", n);
 	}
-	printf("\nReading done\n");
+	printf ("\n");
 	delete[] buff;
 	rp_Release();
+	double dPsdTime = ((double) tAccumulated) / ((double) (CLOCKS_PER_SEC));
+	printf ("Running time per single iteration is %s seconds\n", FormatEngineeringUnits (dPsdTime / (double) nValids).c_str());
+	//:w
 	psd_results.SaveResults ();
 	printf("Results Saved\n");
 	return 0;
