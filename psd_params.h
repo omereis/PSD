@@ -59,6 +59,10 @@ public:
 	string GetPsdFile () const;
 	void SetRawFile (const string &strFile);
 	string GetRawFile() const;
+	void SetAvgWindow (int nAvgWin);
+	int GetAvgWindow () const;
+	void SetTimeWindowThreshold (float rThreshold);
+	float GetTimeWindowThreshold () const;
 protected:
     void AssignAll (const TPsdParams &other);
 private:
@@ -70,6 +74,8 @@ private:
     float m_rLong;
 	int m_nPulses;
 	int m_nSaveRaw;
+	int m_nAvgWin;
+	float m_rTimeWindowThreshold;
 	string m_strJsonFile;
 	string m_strPsdFile;
 	string m_strRawFile;

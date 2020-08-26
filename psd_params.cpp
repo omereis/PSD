@@ -3,22 +3,26 @@
 #include <jsoncpp/json/json.h>
 #include "psd_params.h"
 #include "proj_misc.h"
+
 //-----------------------------------------------------------------------------
 TPsdParams::TPsdParams ()
 {
 	Clear ();
 }
+
 //-----------------------------------------------------------------------------
 TPsdParams::TPsdParams (const TPsdParams &other)
 {
 	AssignAll (other);
 }
+
 //-----------------------------------------------------------------------------
 TPsdParams TPsdParams::operator= (const TPsdParams &other)
 {
 	AssignAll (other);
 	return (*this);
 }
+
 //-----------------------------------------------------------------------------
 bool TPsdParams::operator== (const TPsdParams &other) const
 {
@@ -44,13 +48,19 @@ bool TPsdParams::operator== (const TPsdParams &other) const
 		return (false);
 	if (GetRawFile() != other.GetRawFile())
 		return (false);
+	if (GetAvgWindow () != other.GetAvgWindow())
+		return (false);
+	if (GetTimeWindowThreshold () != other.GetTimeWindowThreshold () )
+		return (false);
 	return (true);
 }
+
 //-----------------------------------------------------------------------------
 bool TPsdParams::operator!= (const TPsdParams &other) const
 {
 	return (!(*this == other));
 }
+
 //-----------------------------------------------------------------------------
 void TPsdParams::Clear ()
 {
@@ -65,6 +75,8 @@ void TPsdParams::Clear ()
 	SetJsonFile ("psd_params.json");
 	SetPsdFile("psd_results.csv");
 	SetRawFile ("");
+	SetAvgWindow (7);
+	SetTimeWindowThreshold (1e-3);
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::AssignAll (const TPsdParams &other)
@@ -80,6 +92,8 @@ void TPsdParams::AssignAll (const TPsdParams &other)
 	SetJsonFile (other.GetJsonFile());
 	SetPsdFile (other.GetPsdFile());
 	SetRawFile (other.GetRawFile());
+	SetAvgWindow (other.GetAvgWindow());
+	SetTimeWindowThreshold (other.GetTimeWindowThreshold ());
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetTrigger (const TTriggerParams &trigger)
@@ -156,6 +170,8 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 	SetPulses(obj["pulses"].asInt());
 	SetSaveRaw (obj["print_raw"].asInt());
 	SetRawFile (obj["raw_file"].asString());
+	SetAvgWindow (obj["filter_window"].asInt());
+	// time_window_threshold
 	m_trigger.LoadFromJson(obj["trigger"]);
 	m_sampling_params.LoadFromJson (obj["sampling"]);
 	return (true);
@@ -226,8 +242,32 @@ void TPsdParams::SetRawFile (const string &strFile)
 	m_strRawFile = strFile;
 }
 //-----------------------------------------------------------------------------
+
 string TPsdParams::GetRawFile() const
 {
 	return (m_strRawFile);
 }
 //-----------------------------------------------------------------------------
+
+void TPsdParams::SetAvgWindow (int nAvgWin)
+{
+	m_nAvgWin = nAvgWin;
+}
+//-----------------------------------------------------------------------------
+
+int TPsdParams::GetAvgWindow () const
+{
+	return (m_nAvgWin);
+}
+
+//-----------------------------------------------------------------------------
+void TPsdParams::SetTimeWindowThreshold (float rThreshold)
+{
+	m_rTimeWindowThreshold = rThreshold;
+}
+
+//-----------------------------------------------------------------------------
+float TPsdParams::GetTimeWindowThreshold () const
+{
+	return (m_rTimeWindowThreshold);
+}
