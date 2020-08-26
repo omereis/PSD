@@ -28,7 +28,7 @@ protected:
 	void AssignAll (const TPsdOutput &params);
 private:
 	TPsdParams m_params;
-	TFloatMatrix m_mtxOut;
+	TFloatMatrix m_mtxOut, m_mtxFiltered;
 	TPsdOutParamsVec m_vPsdParams;
 };
 #endif
