@@ -9,9 +9,12 @@
         "decimation" : "RP_DEC_1"
     },
     "samples" : 6250,
-    "iterations" : 1,
-    "short" : 200,
-    "long" : 5000,
+    "iterations" : 1000,
+    "short" : 2e-6,
+    "long" : 4e-6,
 	"pulses" : 10,
-	"print_raw" : 0
+	"print_raw" : 10,
+	"raw_file" : "signals.csv",
+	"filter_window" : 7,
+	"time_window_threshold" : 1e-3
 }
