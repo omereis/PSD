@@ -90,60 +90,50 @@ TPsdParams TPsdOutput::GetParams() const
 {
 	return (m_params);
 }
-/*
 //-----------------------------------------------------------------------------
-
-double WindowAverage (TFloatVec::const_iterator iStart, int nLength)
-{
-	double dAvg;
-	int n;
-	TFloatVec::const_iterator i;
-
-	for (i=iStart, n=0, dAvg = 0 ; n < nLength ; n++, i++)
-		dAvg += *i;
-	return (dAvg / (double) nLength);
-}
-//-----------------------------------------------------------------------------
-
-void MoveAverageFilter(const TFloatVec &vSignal, TFloatVec &vFiltered, int nWindow)
-{
-	int n;
-	TFloatVec::const_iterator iSignal, iWindow;
-	TFloatVec::iterator iFiltered;
-
-	vFiltered.resize (vSignal.size(), 0);
-	for (n=0, iSignal=vSignal.begin(), iFiltered=vFiltered.begin() ; n < nWindow / 2 ; n++, iSignal++)
-		*iFiltered = *iSignal;
-	for (iWindow=vSignal.begin() ; n < (int) vSignal.size() - (nWindow / 2) ; iWindow++, iFiltered++, n++)
-		*iFiltered = WindowAverage (iWindow, nWindow);
-}
-//-----------------------------------------------------------------------------
-*/
 
 void TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 {
 	TFloatVec vSignal, vFiltered;
 	TFloatVec::iterator i;
-	double dLong, dShort, t;
+	double dLong, dShort, t, tStart, tPulse;
+	float rMax = 0;
 	TPsdOutParams out_params;
+	bool fInPulse;
 
 	ConvertSamples (buff, buff_size, vSignal);
+	MoveAverageFilter(vSignal, vFiltered, m_params.GetAvgWindow());
 	if ((int) PulsesCount() < m_params.GetSaveRaw ()) {
-		MoveAverageFilter(vSignal, vFiltered, 7);
-		m_mtxFiltered.push_back (vFiltered);
 		m_mtxOut.push_back (vSignal);
+		m_mtxFiltered.push_back (vFiltered);
 	}
-	dLong = dShort = t = 0;
-	for (i=vSignal.begin() ; i != vSignal.end() ; i++) {
+	tPulse = dLong = dShort = t = 0;
+	fInPulse = false;
+	for (i=vFiltered.begin() ; i != vFiltered.end() ; i++) {
+		rMax = max (rMax, *i);
 		if (t <= m_params.GetLong()) {
 			dLong += *i;
 			if (t < m_params.GetShort())
 				dShort += *i;
 		}
+		if (!fInPulse) {
+			if ((tPulse == 0) && (*i > m_params.GetTimeWindowThreshold ())) {
+				tStart = t;
+				fInPulse = true;
+			}
+		}
+		else {
+			if (*i < m_params.GetTimeWindowThreshold ()) {
+				tPulse = t - tStart;
+				fInPulse = false;
+			}
+		}
 		t += 8e-9;
 	}
 	out_params.SetLongSum (dLong);
 	out_params.SetShortSum (dShort);
+	out_params.SetAmp (rMax);
+	out_params.SetPulseLength (tPulse);
 	m_vPsdParams.push_back (out_params);
 }
 //-----------------------------------------------------------------------------
@@ -180,26 +170,8 @@ void SaveMatrix (TFloatMatrix &mtx, const string &strFile)
 void TPsdOutput::SaveRaw (const string &strFile)
 {
 	SaveMatrix (m_mtxOut, strFile);
+	printf ("\n\nSaving Filtered Matrix\n");
 	SaveMatrix (m_mtxFiltered, "filt.csv");
-/*
-	size_t row, col;
-	FILE *file;
-	string str;
-
-	printf ("Save Raw:\n");
-	printf ("Matrix Rows: %d\nMatrix Columns: %d\n", m_mtxOut.size(), m_mtxOut[0].size());
-	file = fopen (strFile.c_str(), "w+");
-	for (col=0 ; col < m_mtxOut[0].size() ; col++) {
-		str = "";
-		for (row=0 ; row < m_mtxOut.size() ; row++) {
-			str += to_string(m_mtxOut[row][col]);
-			if (row < (m_mtxOut.size() -1 ))
-				str += ",";
-		}
-		fprintf (file, "%s\n", str.c_str());
-	}
-	fclose (file);
-*/
 }
 //-----------------------------------------------------------------------------
 
