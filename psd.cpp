@@ -10,6 +10,7 @@
 #include <iostream>
 #include <chrono>
 #include <time.h>
+#include <exception>
 
 #include <iostream>
 #include <string>
@@ -35,7 +36,8 @@ struct InputParams {
 };
 //-----------------------------------------------------------------------------
 void InitiateSampling (TPsdParams &params);
-int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/* , struct InputParams  *_params */);
+int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, int16_t *ai16Buf);
+//int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/* , struct InputParams  *_params */);
 //int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, struct InputParams *_params);
 void set_params_defaults (struct InputParams *in_params);
 void get_options (int argc, char **argv, TPsdParams &params, string &strParamsJson, bool &fHelp);
@@ -49,7 +51,7 @@ void calc_histogram (float *adResults, uint32_t nSize, int nBins, int fUseZero, 
 void print_debug (const char *sz);
 void set_files_extensions (struct InputParams *in_params);
 void ExitWithError (const char * format, ...);
-bool read_fast_analog (float *buff, uint32_t buff_size);
+bool read_fast_analog (float *buff, uint32_t buff_size, int16_t *ai16Buf);
 //-----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
@@ -58,7 +60,13 @@ int main(int argc, char **argv)
 	bool fHelp;
 	string strParamsJson (s_strDefaultParamsJson); 
 
-	system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
+	printf ("Howdi, folks\n");
+	try {
+		system ("cat /opt/redpitaya/fpga/fpga_0.94.bit > /dev/xdevcfg");
+	}
+	catch (exception &e) {
+		printf ("Runtime error\n%s", e.what());
+	}
 	printf ("RF input reader\n");
 	if(rp_Init() != RP_OK){
 		fprintf(stderr, "Rp api init failed!\n");
@@ -71,17 +79,39 @@ int main(int argc, char **argv)
 		exit (0);
 	}
 	m_params.print();
+	rp_pinState_t gain;
+	float rGain;
+	rp_AcqGetGainV(RP_CH_1, &rGain);
+	printf ("Channel 1 gain: %g\n", rGain);
+	//rp_AcqSetGain(RP_CH_1, RP_HIGH);
+	rp_AcqGetGain(RP_CH_1, &gain);
+	if (gain == RP_LOW)
+		printf ("Low Gain\n");
+	else
+		printf ("High Gain\n");
+	rp_AcqGetGainV (RP_CH_1, &rGain);
+	printf ("Library gain: %g\n", rGain);
+	rp_calib_params_t tCalib;
+
+	memset (&tCalib, 0, sizeof(tCalib));
+	tCalib = rp_GetCalibrationSettings();
+	printf ("Channel 1 Calibration settings\n");
+	printf ("High gain front end full scale voltage: %g\n", (float) tCalib.fe_ch1_fs_g_hi);
+	printf ("Back end full scale voltage: %g\n", (float) tCalib.fe_ch1_fs_g_hi);
+	//exit (0);
 	printf ("===========================================\n");
 	psd_results.SetParams (m_params);
 
 	int n, nValids;
 	uint32_t buff_size = m_params.GetSamples();
-	float *buff = new float[buff_size];;
+	float *buff = new float[buff_size];
+	//int16_t *ai16Buf = new int16_t[buff_size];
 	clock_t tStart, tAccumulated;
 	InitiateSampling (m_params);
 	for (n=0, nValids=0 ; n < m_params.GetIterations() ; n++) {
 		tAccumulated = 0;
-		if (read_fast_analog (buff, buff_size)) {
+		if (read_fast_analog (buff, buff_size, NULL)) {
+		//if (read_fast_analog (buff, buff_size, ai16Buf)) {
 			nValids++;
 			tStart = clock ();
 			psd_results.HandleNew(buff, buff_size);
@@ -90,12 +120,18 @@ int main(int argc, char **argv)
 		printf ("%d iterations completed\r", n);
 	}
 	printf ("\n");
+	printf ("So far so good\n");
 	delete[] buff;
+	//delete[] ai16Buf;
 	rp_Release();
 	double dPsdTime = ((double) tAccumulated) / ((double) (CLOCKS_PER_SEC));
 	printf ("Running time per single iteration is %s seconds\n", FormatEngineeringUnits (dPsdTime / (double) nValids).c_str());
 	//:w
 	psd_results.SaveResults ();
+	FILE *fileSum;
+	fileSum = fopen ("psd_sum.dat", "a+");
+	psd_results.SaveResultsMean (fileSum);
+	fclose (fileSum);
 	printf("Results Saved\n");
 	return 0;
 }
@@ -126,7 +162,9 @@ void print_debug (const char *sz)
 int nDebug=1;
 //-----------------------------------------------------------------------------
 //int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, TPsdParams &params)
-int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/*, struct InputParams *in_params*/)
+
+//int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/*, struct InputParams *in_params*/)
+int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, int16_t *ai16Buf)
 {
 	time_t tStart, tNow;
 	bool fTrigger, fTimeLimit;
@@ -163,9 +201,11 @@ int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits/*, struct In
 		uint32_t nTrigPos;
 		rp_AcqGetWritePointerAtTrig (&nTrigPos);
 		rp_AcqGetDataV(RP_CH_1, nTrigPos-100, &buff_size, buff); // 80 nSec before trigger
+		if (ai16Buf != NULL)
+			rp_AcqGetDataRaw(RP_CH_1, nTrigPos-100, &buff_size, ai16Buf); // 80 nSec before trigger
 	}
 	else
-		printf ("Timeout\n");
+		printf ("\nTimeout\n");
 	rp_AcqStop ();
 	return (fTrigger);
 }
@@ -190,6 +230,7 @@ commands
 */
 	//set_params_defaults (in_params);
 
+	printf ("This is get_options\n");
 	fHelp = false;
 	while ((c = getopt (argc, argv, "hpt:n:f:d:i:s:H:")) != -1)
 		switch (c) {
@@ -238,6 +279,7 @@ commands
 				params.SetRawFile(optarg);
 				break;
 		}
+	printf ("Copleted get_options\n");
 } 
 //-----------------------------------------------------------------------------
 
@@ -407,7 +449,7 @@ void calc_histogram (float *adResults, uint32_t nSize, int nBins, int fUseZero, 
 	free (anHistogram);
 }
 
-bool read_fast_analog (float *buff, uint32_t buff_size)
+bool read_fast_analog (float *buff, uint32_t buff_size, int16_t *ai16Buf)
 {
 	rp_acq_trig_state_t state = RP_TRIG_STATE_TRIGGERED;
 	time_t tStart, tNow;
@@ -432,6 +474,10 @@ bool read_fast_analog (float *buff, uint32_t buff_size)
 		uint32_t nTrigPos;
 		rp_AcqGetWritePointerAtTrig (&nTrigPos);
 		rp_AcqGetDataV(RP_CH_1, nTrigPos-100, &buff_size, buff); // 80 nSec before trigger
+		for (int n=0 ; n < (int) buff_size ; n++)
+			buff[n] *= 25.336;
+		if (ai16Buf != NULL)
+			rp_AcqGetDataRaw(RP_CH_1, nTrigPos-100, &buff_size, ai16Buf); // 80 nSec before trigger
 	}
 	else
 		printf ("Timeout\n");

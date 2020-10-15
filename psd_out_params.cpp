@@ -26,6 +26,12 @@ bool TPsdOutParams::operator== (const TPsdOutParams &other) const
 		return (false);
 	if (GetPulseLength () != other.GetPulseLength ())
 		return (false);
+	if (GetTau()          != other.GetTau())
+		return (false);
+	if (GetStart() != other.GetStart())
+		return (false);
+	if (GetEnd() != other.GetEnd())
+		return (false);
     return (true);
 }
 //-----------------------------------------------------------------------------
@@ -40,6 +46,11 @@ void TPsdOutParams::Clear ()
 	SetLongSum (0);
 	SetAmp (0);
 	SetPulseLength (0);
+	SetTau (0);
+	SetStart (0);
+	SetEnd (0);
+	i0 = iEnd = 0;
+	m_dTotal = 0;
 }
 //-----------------------------------------------------------------------------
 void TPsdOutParams::AssignAll 	(const TPsdOutParams &other)
@@ -48,6 +59,12 @@ void TPsdOutParams::AssignAll 	(const TPsdOutParams &other)
 	SetLongSum (other.GetLongSum());
 	SetAmp (other.GetAmp());
 	SetPulseLength (other.GetPulseLength());
+	SetTau (other.GetTau());
+	SetEnd (other.GetEnd());
+	SetStart (other.GetStart());
+	i0 = other.i0;
+	iEnd = other.iEnd;
+	m_dTotal = other.m_dTotal ;
 }
 //-----------------------------------------------------------------------------
 void TPsdOutParams::SetShortSum (double dShortSum)
@@ -89,6 +106,60 @@ double TPsdOutParams::GetPulseLength () const
 {
     return (m_dPulseLength);
 }
+//-----------------------------------------------------------------------------
+void TPsdOutParams::SetTau (double dTau)
+{
+	m_dTau = dTau;
+}
+//-----------------------------------------------------------------------------
+double TPsdOutParams::GetTau () const
+{
+	return (m_dTau);
+}
+void TPsdOutParams::SetStart (double dStart)
+{
+	m_dStart = dStart;
+}
+//-----------------------------------------------------------------------------
+double TPsdOutParams::GetStart () const
+{
+	return (m_dStart);
+}
+//-----------------------------------------------------------------------------
+void TPsdOutParams::SetEnd (double dEnd)
+{
+	m_dEnd = dEnd;
+}
+//-----------------------------------------------------------------------------
+double TPsdOutParams::GetEnd () const
+{
+	return (m_dEnd);
+}
+//-----------------------------------------------------------------------------
+
+void TPsdOutParams::AddShortSum (double d)
+{
+	SetShortSum (GetShortSum() + d);
+}
+//-----------------------------------------------------------------------------
+
+void TPsdOutParams::AddLongSum (double d)
+{
+	SetLongSum (GetLongSum() + d);
+}
+//-----------------------------------------------------------------------------
+
+void TPsdOutParams::AddAmp (double d)
+{
+	SetAmp (GetAmp() + d);
+}
+//-----------------------------------------------------------------------------
+
+void TPsdOutParams::AddPulseLength (double d)
+{
+	SetPulseLength (GetPulseLength() + d);
+}
+//-----------------------------------------------------------------------------
 TPsdOutParamsVec::TPsdOutParamsVec ()
 	: TPsdOutParamsBaseVec ()
 {

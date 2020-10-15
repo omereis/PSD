@@ -5,6 +5,7 @@
 #include "proj_misc.h"
 #include <stdio.h>
 #include "psd_output.h"
+#include <math.h>
 
 /*
 template <class T>
@@ -96,6 +97,85 @@ void TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 {
 	TFloatVec vSignal, vFiltered;
 	TFloatVec::iterator i;
+	double dLong, dShort, t, tStart, tPulse, tEnd, dTotal;
+	float rMax = 0;
+	TPsdOutParams out_params;
+	bool fInPulse;
+	int n, i0=0, iEnd=0;
+
+	ConvertSamples (buff, buff_size, vSignal);
+	MoveAverageFilter(vSignal, vFiltered, m_params.GetAvgWindow());
+	if ((int) PulsesCount() < m_params.GetSaveRaw ()) {
+		m_mtxOut.push_back (vSignal);
+		m_mtxFiltered.push_back (vFiltered);
+	}
+	tPulse = dLong = dShort = t = tEnd = dTotal = 0;
+	n=0;
+	fInPulse = false;
+	for (i=vFiltered.begin() ; i != vFiltered.end() ; i++) {
+		dTotal += *i;
+		rMax = max (rMax, *i);
+		if (fInPulse) {
+			if ((t - tStart) <= m_params.GetLong()) {
+				dLong += *i;
+				if ((t - tStart) < m_params.GetShort())
+					dShort += *i;
+			}
+			if (*i < m_params.GetTimeWindowThreshold ()) {
+				tPulse = t - tStart;
+				tEnd = t;
+				fInPulse = false;
+				iEnd = n;
+			}
+		}
+		else {
+		//if (!fInPulse) {
+			if ((tPulse == 0) && (*i > m_params.GetTimeWindowThreshold ())) {
+				tStart = t;
+				fInPulse = true;
+				i0 = n;
+			}
+		}
+/*
+		else {
+			if ((fInPulse) && (*i < m_params.GetTimeWindowThreshold ())) {
+				tPulse = t - tStart;
+				tEnd = t;
+				fInPulse = false;
+			}
+		}
+*/
+		t += 8e-9;
+		n++;
+	}
+	out_params.SetLongSum (dLong);
+	out_params.SetShortSum (dShort);
+	out_params.SetAmp (rMax);
+	out_params.SetPulseLength (tPulse);
+	out_params.SetStart (tStart);
+	out_params.SetEnd (tEnd);
+	out_params.i0 = i0;
+	out_params.iEnd = iEnd;
+	out_params.m_dTotal = dTotal;
+/*
+	if (rMax > 0) {
+		double dDenom, dTau = 0;
+
+		dDenom = m_params.GetTimeWindowThreshold() / rMax;
+		if (dDenom > 0)
+			dTau = tPulse / log(dDenom);
+		out_params.SetTau (dTau);
+	}
+*/
+	m_vPsdParams.push_back (out_params);
+}
+//-----------------------------------------------------------------------------
+
+/*
+void TPsdOutput::HandleNew(float *buff, int16_t *ai16Buf, uint32_t buff_size)
+{
+	TFloatVec vSignal, vFiltered, vRaw;
+	TFloatVec::iterator i;
 	double dLong, dShort, t, tStart, tPulse;
 	float rMax = 0;
 	TPsdOutParams out_params;
@@ -104,8 +184,13 @@ void TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 	ConvertSamples (buff, buff_size, vSignal);
 	MoveAverageFilter(vSignal, vFiltered, m_params.GetAvgWindow());
 	if ((int) PulsesCount() < m_params.GetSaveRaw ()) {
+		//int n;
+		//vRaw.resize(buff_size);
+		//for (i=vRaw.begin(), n=0 ; i != vRaw.end() ; i++, n++)
+		//	*i = (float) ai16Buf[n];
 		m_mtxOut.push_back (vSignal);
 		m_mtxFiltered.push_back (vFiltered);
+		//m_mtxRaw.push_back (vRaw);
 	}
 	tPulse = dLong = dShort = t = 0;
 	fInPulse = false;
@@ -137,6 +222,7 @@ void TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 	m_vPsdParams.push_back (out_params);
 }
 //-----------------------------------------------------------------------------
+*/
 
 void TPsdOutput::SaveResults ()
 {
@@ -172,6 +258,7 @@ void TPsdOutput::SaveRaw (const string &strFile)
 	SaveMatrix (m_mtxOut, strFile);
 	printf ("\n\nSaving Filtered Matrix\n");
 	SaveMatrix (m_mtxFiltered, "filt.csv");
+	//SaveMatrix (m_mtxRaw, "raw.csv");
 }
 //-----------------------------------------------------------------------------
 
@@ -182,8 +269,45 @@ void TPsdOutput::SavePsd (const string &strFile)
 	int n;
 
 	file = fopen (strFile.c_str(), "w+");
-	fprintf (file, "No, Long, Short, Vmax, Length\n");
+	fprintf (file, "No, Long, Short, Vmax, Length, Len[nano],Start,End,total\n");
 	for (i=m_vPsdParams.begin(), n=0 ; i != m_vPsdParams.end() ; i++)
-		fprintf (file, "%d,%g,%g,%g,%g\n", n++, i->GetLongSum(), i->GetShortSum(), i->GetAmp(), i->GetPulseLength());
+		fprintf (file, "%d,%g,%g,%g,%g,%g,%g,%g,%d,%d,%g\n", n++, i->GetLongSum(), i->GetShortSum(), i->GetAmp(), i->GetPulseLength(), 1e9 * i->GetPulseLength(), i->GetStart(), i->GetEnd(), i->i0, i->iEnd, i->m_dTotal);
+		//fprintf (file, "%d,%g,%g,%g,%g,%g,%g,%g\n", n++, i->GetLongSum(), i->GetShortSum(), i->GetAmp(), i->GetPulseLength(), i->GetTau(),
+		//											i->GetStart(), i->GetEnd());
 	fclose (file);
 }
+//-----------------------------------------------------------------------------
+
+bool TPsdOutput::SaveResultsMean (FILE *file)
+{
+	TPsdOutParams po;
+	float n;
+	TPsdOutParamsVec::iterator i;
+	bool f;
+
+	for (i=m_vPsdParams.begin(), n=0 ; i != m_vPsdParams.end() ; i++, n++) {
+		po.AddShortSum (i->GetShortSum());
+		po.AddLongSum (i->GetLongSum());
+		po.AddAmp (i->GetAmp());
+		po.AddPulseLength(i->GetPulseLength());
+	}
+	if (n > 0) {
+		po.SetShortSum (po.GetLongSum() / n);
+		po.SetLongSum (po.GetLongSum() / n);
+		po.SetAmp (po.GetAmp() / n);
+		po.SetPulseLength (po.GetPulseLength() / n);
+	}
+	try {
+		if (file) {
+			fprintf (file, "%g,%g,%g,%g,%g\n", po.GetLongSum(), po.GetShortSum(), po.GetAmp(), po.GetPulseLength(), 1e9 * po.GetPulseLength());
+			f = true;
+		}
+	}
+	catch (exception &e) {
+		fprintf (stderr, "%s\n", e.what());
+		f = false;
+	}
+	return (f);
+}
+
+
