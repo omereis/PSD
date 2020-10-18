@@ -106,7 +106,8 @@ int main(int argc, char **argv){
 	//for(i = 0; i < 1000; i++){
         //for(i = 0; i < buff_size; i++){
                 //printf("%f\n", buff[i]);
-                fprintf(file, "%f,%d\n", buff[i], auiBuffer[i]);
+                //fprintf(file, "%f,%d\n", buff[i], auiBuffer[i]);
+                fprintf(file, "%d\n", auiBuffer[i]);
         }
 		if (argc > 2)
 			fclose (file);
