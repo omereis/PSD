@@ -492,6 +492,7 @@ bool read_fast_analog (float *buff, uint32_t buff_size, int16_t *ai16Buf, const 
 		rp_AcqGetWritePointerAtTrig (&nTrigPos);
 		//rp_AcqGetDataV(RP_CH_1, nTrigPos-100, &buff_size, buff); // 80 nSec before trigger
 		rp_AcqGetDataRaw(RP_CH_1, nTrigPos-100, &buff_size, aiBuffer); // 80 nSec before trigger
+		FILE *fileRaw;
 		static bool fWritten = false;
 		if (!fWritten) {
 			fWritten = true;

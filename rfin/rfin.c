@@ -8,8 +8,12 @@
 #include "redpitaya/rp.h"
 #include "fpga.h"
 
+rp_acq_decimation_t GetCmdLineDecimation (int argc, char *argv[]);
+void print_decimation (rp_acq_decimation_t decCurrent);
 
-int main(int argc, char **argv){
+int main(int argc, char **argv)
+{
+	rp_acq_decimation_t decimation, decCurrent;
 
         /* Print error, if rp_Init() function failed */
 	printf ("RF input reader\n");
@@ -42,8 +46,12 @@ int main(int argc, char **argv){
 		int16_t* auiBuffer = (int16_t*) calloc (buff_size, sizeof (auiBuffer[0]));
 
         rp_AcqReset();
-        rp_AcqSetDecimation(RP_DEC_1);
-        rp_AcqSetTriggerLevel(RP_CH_1, 10e-3); //Trig level is set in Volts while in SCPI
+		decimation = GetCmdLineDecimation (argc, argv);
+        rp_AcqSetDecimation(decimation);
+        rp_AcqGetDecimation(&decCurrent);
+		print_decimation (decCurrent);
+        //rp_AcqSetDecimation(RP_DEC_1);
+        rp_AcqSetTriggerLevel(RP_CH_1, 1e-3); //Trig level is set in Volts while in SCPI
 		//rp_AcqSetSamplingRate (RP_SMP_125M);
 		rp_AcqSetSamplingRate (RP_SMP_15_625M);
 		
@@ -76,20 +84,20 @@ int main(int argc, char **argv){
 		if (state == RP_TRIG_STATE_TRIGGERED)//{
 			fTrigger = 1;
 		dDiff = (clock() - cStart);
-		dDiff = (double) CLOCKS_PER_SEC;
+		dDiff /= (double) CLOCKS_PER_SEC;
 		//printf ("Diff: %g\n", dDiff);
 		if (dDiff >= 3)
 		//if (((double) (clock() - cStart) / (double) CLOCKS_PER_SEC) >=2)
 			fTimeout = 1;
 		//else
-			printf ("Time Diff: %g\n", dDiff);
+			//printf ("Time Diff: %g\n", dDiff);
 			//break;
 		//}
 	}
 	if (fTrigger)
 		printf ("Triggered\n");
 	else
-		printf ("Timeout\n");
+		printf ("Timeout: %g\n", dDiff);
 
 	rp_AcqGetOldestDataV(RP_CH_1, &buff_size, buff);
 	uint32_t uiTriggerPos, uiLen=buff_size;//15000;
@@ -118,3 +126,41 @@ int main(int argc, char **argv){
         return 0;
 }
 
+rp_acq_decimation_t GetCmdLineDecimation (int argc, char *argv[])
+{
+	rp_acq_decimation_t decimation;
+	int nCode;
+
+	decimation = RP_DEC_1;
+	if (argc > 2) {
+		nCode = atoi(argv[2]);
+		if (nCode == 8)
+			decimation = RP_DEC_8;
+		else if (nCode == 64)
+			decimation = RP_DEC_64;
+		else if (nCode == 1024)
+			decimation = RP_DEC_1024;
+		else
+			decimation = RP_DEC_1;
+	}
+	return (decimation);
+}
+
+void print_decimation (rp_acq_decimation_t decCurrent)
+{
+	char *sz;
+
+	printf ("Decimation: ");
+	if (decCurrent == RP_DEC_1)
+		sz = "1";
+	else if (decCurrent == RP_DEC_8)
+		sz = "8";
+	else if (decCurrent == RP_DEC_64)
+		sz = "64";
+	else if (decCurrent == RP_DEC_1024)
+		sz = "1024";
+	else
+		sz = "other";
+	printf (" %s\n", sz);
+
+}
