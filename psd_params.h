@@ -63,6 +63,10 @@ public:
 	int GetAvgWindow () const;
 	void SetTimeWindowThreshold (float rThreshold);
 	float GetTimeWindowThreshold () const;
+	void SetInputTau (double d);
+	double GetInputTau () const;
+	void SetInputVoltage (double d);
+	double GetInputVoltage () const;
 protected:
     void AssignAll (const TPsdParams &other);
 private:
@@ -79,5 +83,7 @@ private:
 	string m_strJsonFile;
 	string m_strPsdFile;
 	string m_strRawFile;
+	double m_dTau;
+	double m_dInVoltage;
 };
 #endif

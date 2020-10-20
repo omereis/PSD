@@ -84,9 +84,9 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Rp api init failed!\n");
 	}
 	printf ("===========================================\n");
-	get_options (argc, argv, m_params, strParamsJson, fHelp);
 
 	m_params.LoadFromJson ("psd_params.json");
+	get_options (argc, argv, m_params, strParamsJson, fHelp);
 	LoadAdcParams (adc_convert);
 
 	if (fHelp) {
@@ -94,6 +94,8 @@ int main(int argc, char **argv)
 		exit (0);
 	}
 	m_params.print();
+	printf ("===========================================\n");
+
 	rp_pinState_t gain;
 	float rGain;
 	rp_AcqGetGainV(RP_CH_1, &rGain);
@@ -123,13 +125,14 @@ int main(int argc, char **argv)
 	//int16_t *ai16Buf = new int16_t[buff_size];
 	clock_t tStart, tAccumulated;
 	InitiateSampling (m_params);
-	for (n=0, nValids=0 ; n < m_params.GetIterations() ; n++) {
+	for (n=0, nValids=0 ; n < m_params.GetIterations() ; /*n++*/) {
 		tAccumulated = 0;
 		if (read_fast_analog (buff, buff_size, NULL, adc_convert)) {
 		//if (read_fast_analog (buff, buff_size, ai16Buf)) {
 			nValids++;
 			tStart = clock ();
-			psd_results.HandleNew(buff, buff_size);
+			if (psd_results.HandleNew(buff, buff_size))
+				n++;
 			tAccumulated += (clock() - tStart);
 		}
 		printf ("%d iterations completed\r", n);
@@ -143,10 +146,12 @@ int main(int argc, char **argv)
 	printf ("Running time per single iteration is %s seconds\n", FormatEngineeringUnits (dPsdTime / (double) nValids).c_str());
 	//:w
 	psd_results.SaveResults ();
-	FILE *fileSum;
-	fileSum = fopen ("psd_sum.dat", "a+");
-	psd_results.SaveResultsMean (fileSum);
-	fclose (fileSum);
+	//FILE *fileSum;
+	//fileSum = fopen ("psd_sum.csv", "w+");
+	//psd_results.SaveResultsMean (fileSum);
+	psd_results.SaveResultsMean (m_params, "psd_sum.csv");
+	//psd_results.SaveResultsMean (fileSum);
+	//fclose (fileSum);
 	printf("Results Saved\n");
 	return 0;
 }
@@ -245,9 +250,9 @@ commands
 */
 	//set_params_defaults (in_params);
 
-	printf ("This is get_options\n");
+	//printf ("This is get_options\n");
 	fHelp = false;
-	while ((c = getopt (argc, argv, "hpt:n:f:d:i:s:H:")) != -1)
+	while ((c = getopt (argc, argv, "hpt:n:f:d:i:s:H:v:T:")) != -1)
 		switch (c) {
 			case 'f':
 			case 'F':
@@ -286,8 +291,16 @@ commands
 				params.SetShort (atof (optarg));
 				break;
 			case 't':
-			case 'T':
 				params.SetTriggerLevel (atof (optarg));
+				printf ("Trigger set to %g\n", atof(optarg) * 1e3);
+				break;
+			case 'T':
+				params.SetInputTau (atof (optarg));
+				fHelp = false;
+				break;
+			case 'v':
+				params.SetInputVoltage (atof (optarg));
+				fHelp = false;
 				break;
 			case 'w':
 			case 'W':
@@ -345,13 +358,15 @@ void print_usage(char *argv[], TPsdParams &params, const string &strParamsJson)
 		string ("    h - help\t\t\t\t| false\n") +
 		string ("    i - iterations (-1 == inf)\t\t| ") +  FormatWithComma(params.GetIterations()) + "\n" +
 		string ("    j - input json parameters\t\t| ") + strParamsJson + "\n" +
-		string ("    l - long persiod [nSec]\t\t| ") + to_string(params.GetLong()) + "\n" +
+		string ("    l - long persiod [nSec]\t\t| ") + to_string(params.GetLong() * 1e9) + "\n" +
 		string ("    n - samples (buffer length)\t\t| ") + FormatWithComma (params.GetSamples()) + "\n" +
 		string ("    p - output psd results\t\t| ") + params.GetPsdFile() + "\n" +
 		string ("    r - output raw name\t\t\t| ") + strRawFile + "\n" +
-		string ("    s - short period [nSec]\t\t| ") + to_string(params.GetLong()) + "\n" +
+		string ("    s - short period [nSec]\t\t| ") + to_string(params.GetLong() *1e9) + "\n" +
 		string ("    t - trigger levet\t\t\t| ") + to_string(params.GetTrigger().GetLevel()) + "\n" +
 		string ("    w - raw pulses to save\t\t| ") +  to_string(params.GetSaveRaw()) + "\n" +
+		string ("    v - Input Voltage\t\t\t| ") + to_string (params.GetInputVoltage() * 1e3) + "\n" +
+		string ("    T - Input Tau\t\t\t| ") + to_string(params.GetInputTau() * 1e6) + "\n";
 		string ("=====================================================================\n");
 		//string ("Defaults:\n") +
 		//string ("    Iterations: ") + to_string(params.GetIterations());
@@ -493,16 +508,15 @@ bool read_fast_analog (float *buff, uint32_t buff_size, int16_t *ai16Buf, const 
 		//rp_AcqGetDataV(RP_CH_1, nTrigPos-100, &buff_size, buff); // 80 nSec before trigger
 		rp_AcqGetDataRaw(RP_CH_1, nTrigPos-100, &buff_size, aiBuffer); // 80 nSec before trigger
 		static bool fWritten = false;
+		for (int n=0 ; n < (int) buff_size ; n++)
+			buff[n] = adc_convert.offset + adc_convert.gain * (float) aiBuffer[n];//25.336;
 		if (!fWritten) {
 			fWritten = true;
 			FILE *fileDebug = fopen ("raw.csv", "w+");
 			for (int m=0 ; m < (int) buff_size ; m++)
-				fprintf (fileDebug, "%d,%g,%g,\n", aiBuffer[m], aiBuffer[m] * adc_convert.gain + adc_convert.offset,
-																aiBuffer[m] * adc_convert.offset + adc_convert.gain);
+				fprintf (fileDebug, "%d,%g\n", aiBuffer[m], buff[m]);
 			fclose (fileDebug);
 		}
-		for (int n=0 ; n < (int) buff_size ; n++)
-			buff[n] = adc_convert.offset + adc_convert.gain * (float) aiBuffer[n];//25.336;
 		free (aiBuffer);
 		if (ai16Buf != NULL)
 			rp_AcqGetDataRaw(RP_CH_1, nTrigPos-100, &buff_size, ai16Buf); // 80 nSec before trigger

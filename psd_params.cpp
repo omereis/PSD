@@ -52,6 +52,10 @@ bool TPsdParams::operator== (const TPsdParams &other) const
 		return (false);
 	if (GetTimeWindowThreshold () != other.GetTimeWindowThreshold () )
 		return (false);
+	if (GetInputTau() != other.GetInputTau())
+		return (false);
+	if (GetInputVoltage() != other.GetInputVoltage())
+		return (false);
 	return (true);
 }
 
@@ -77,6 +81,8 @@ void TPsdParams::Clear ()
 	SetRawFile ("");
 	SetAvgWindow (7);
 	SetTimeWindowThreshold (1e-3);
+	SetInputTau (0);
+	SetInputVoltage (0);
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::AssignAll (const TPsdParams &other)
@@ -94,6 +100,8 @@ void TPsdParams::AssignAll (const TPsdParams &other)
 	SetRawFile (other.GetRawFile());
 	SetAvgWindow (other.GetAvgWindow());
 	SetTimeWindowThreshold (other.GetTimeWindowThreshold ());
+	SetInputTau (other.GetInputTau());
+	SetInputVoltage (other.GetInputVoltage());
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetTrigger (const TTriggerParams &trigger)
@@ -189,6 +197,8 @@ void TPsdParams::print ()
 	printf ("Raw File Name: '%s'\n", GetRawFile().c_str());
 	printf ("Trigger:\n%s\n", m_trigger.AsString().c_str());
 	printf ("Sampling:\n%s\n", m_sampling_params.AsString().c_str());
+	printf ("Input Tau: %g microSeconds\n", GetInputTau() * 1e6);
+	printf ("Input Voltage: %g millivolts\n", GetInputVoltage() * 1e3); 
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetPulses (int nPulses)
@@ -235,6 +245,7 @@ string TPsdParams::GetPsdFile () const
 void TPsdParams::SetTriggerLevel (float rTrigger)
 {
 	m_trigger.SetLevel (rTrigger);
+	//printf ("\n\nTrigger Level set to %s\n\n", m_trigger.AsString().c_str());
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetRawFile (const string &strFile)
@@ -271,3 +282,28 @@ float TPsdParams::GetTimeWindowThreshold () const
 {
 	return (m_rTimeWindowThreshold);
 }
+
+void TPsdParams::SetInputTau (double d)
+{
+	m_dTau = d;
+}
+
+//-----------------------------------------------------------------------------
+
+double TPsdParams::GetInputTau () const
+{
+	return (m_dTau);
+}
+
+//-----------------------------------------------------------------------------
+void TPsdParams::SetInputVoltage (double d)
+{
+	m_dInVoltage = d;
+}
+
+//-----------------------------------------------------------------------------
+double TPsdParams::GetInputVoltage () const
+{
+	return (m_dInVoltage);
+}
+

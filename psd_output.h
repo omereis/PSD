@@ -20,9 +20,10 @@ public:
 	void SetParams (const TPsdParams &params);
 	TPsdParams GetParams() const;
 	uint32_t PulsesCount () const;
-	void HandleNew(float *buff, uint32_t buff_size);
+	bool HandleNew(float *buff, uint32_t buff_size);
 	void HandleNew(float *buff, int16_t *ai16Buf, uint32_t buff_size);
-	bool SaveResultsMean (FILE *file);
+	bool SaveResultsMean (const TPsdParams &in_params, const string &strFileName);
+	bool SaveResultsMean (const TPsdParams &in_params, FILE *file);
 	void SaveResults ();
 	void SaveRaw (const string &strFile);
 	void SavePsd (const string &strFile);

@@ -93,14 +93,14 @@ TPsdParams TPsdOutput::GetParams() const
 }
 //-----------------------------------------------------------------------------
 
-void TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
+bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 {
 	TFloatVec vSignal, vFiltered;
 	TFloatVec::iterator i;
 	double dLong, dShort, t, tStart, tPulse, tEnd, dTotal;
 	float rMax = 0;
 	TPsdOutParams out_params;
-	bool fInPulse;
+	bool fInPulse, fAdded;
 	int n, i0=0, iEnd=0;
 
 	ConvertSamples (buff, buff_size, vSignal);
@@ -136,38 +136,25 @@ void TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 				i0 = n;
 			}
 		}
-/*
-		else {
-			if ((fInPulse) && (*i < m_params.GetTimeWindowThreshold ())) {
-				tPulse = t - tStart;
-				tEnd = t;
-				fInPulse = false;
-			}
-		}
-*/
 		t += 8e-9;
 		n++;
 	}
-	out_params.SetLongSum (dLong);
-	out_params.SetShortSum (dShort);
-	out_params.SetAmp (rMax);
-	out_params.SetPulseLength (tPulse);
-	out_params.SetStart (tStart);
-	out_params.SetEnd (tEnd);
-	out_params.i0 = i0;
-	out_params.iEnd = iEnd;
-	out_params.m_dTotal = dTotal;
-/*
-	if (rMax > 0) {
-		double dDenom, dTau = 0;
-
-		dDenom = m_params.GetTimeWindowThreshold() / rMax;
-		if (dDenom > 0)
-			dTau = tPulse / log(dDenom);
-		out_params.SetTau (dTau);
+	if (tPulse >= 500e-9) {
+		out_params.SetLongSum (dLong);
+		out_params.SetShortSum (dShort);
+		out_params.SetAmp (rMax);
+		out_params.SetPulseLength (tPulse);
+		out_params.SetStart (tStart);
+		out_params.SetEnd (tEnd);
+		out_params.i0 = i0;
+		out_params.iEnd = iEnd;
+		out_params.m_dTotal = dTotal;
+		m_vPsdParams.push_back (out_params);
+		fAdded = true;
 	}
-*/
-	m_vPsdParams.push_back (out_params);
+	else
+		fAdded = false;
+	return (fAdded);
 }
 //-----------------------------------------------------------------------------
 
@@ -271,14 +258,33 @@ void TPsdOutput::SavePsd (const string &strFile)
 	file = fopen (strFile.c_str(), "w+");
 	fprintf (file, "No, Long, Short, Vmax, Length, Len[nano],Start,End,total\n");
 	for (i=m_vPsdParams.begin(), n=0 ; i != m_vPsdParams.end() ; i++)
-		fprintf (file, "%d,%g,%g,%g,%g,%g,%g,%g,%d,%d,%g\n", n++, i->GetLongSum(), i->GetShortSum(), i->GetAmp(), i->GetPulseLength(), 1e9 * i->GetPulseLength(), i->GetStart(), i->GetEnd(), i->i0, i->iEnd, i->m_dTotal);
+		fprintf (file, "%d,%g,%g,%g,%g,%g,%g,%g,%d,%d,%g\n", ++n, i->GetLongSum(), i->GetShortSum(), i->GetAmp(), i->GetPulseLength(), 1e9 * i->GetPulseLength(), i->GetStart(), i->GetEnd(), i->i0, i->iEnd, i->m_dTotal);
 		//fprintf (file, "%d,%g,%g,%g,%g,%g,%g,%g\n", n++, i->GetLongSum(), i->GetShortSum(), i->GetAmp(), i->GetPulseLength(), i->GetTau(),
 		//											i->GetStart(), i->GetEnd());
 	fclose (file);
 }
 //-----------------------------------------------------------------------------
 
-bool TPsdOutput::SaveResultsMean (FILE *file)
+#include <unistd.h>
+
+bool TPsdOutput::SaveResultsMean (const TPsdParams &in_params, const string &strFileName)
+{
+	FILE *file;
+
+	if (access (strFileName.c_str(), W_OK) == 0) {
+		file = fopen (strFileName.c_str(), "a+");
+	}
+	else {
+		file = fopen (strFileName.c_str(), "w+");
+		fprintf (file, "Input Voltage, Input Tau, Long Charge, Short Charge, Amplitude, Pulse length[uSec]\n"); 
+	}
+	bool f = SaveResultsMean (in_params, file);
+	fclose (file);
+	return (f);
+}
+//-----------------------------------------------------------------------------
+
+bool TPsdOutput::SaveResultsMean (const TPsdParams &in_params, FILE *file)
 {
 	TPsdOutParams po;
 	float n;
@@ -286,20 +292,21 @@ bool TPsdOutput::SaveResultsMean (FILE *file)
 	bool f;
 
 	for (i=m_vPsdParams.begin(), n=0 ; i != m_vPsdParams.end() ; i++, n++) {
-		po.AddShortSum (i->GetShortSum());
 		po.AddLongSum (i->GetLongSum());
+		po.AddShortSum (i->GetShortSum());
 		po.AddAmp (i->GetAmp());
 		po.AddPulseLength(i->GetPulseLength());
 	}
 	if (n > 0) {
-		po.SetShortSum (po.GetLongSum() / n);
 		po.SetLongSum (po.GetLongSum() / n);
+		po.SetShortSum (po.GetShortSum() / n);
 		po.SetAmp (po.GetAmp() / n);
 		po.SetPulseLength (po.GetPulseLength() / n);
 	}
 	try {
 		if (file) {
-			fprintf (file, "%g,%g,%g,%g,%g\n", po.GetLongSum(), po.GetShortSum(), po.GetAmp(), po.GetPulseLength(), 1e9 * po.GetPulseLength());
+			fprintf (file, "%g,%g,%g,%g,%g,%g\n", in_params.GetInputVoltage() * 1e3, in_params.GetInputTau () * 1e6,
+												po.GetLongSum(), po.GetShortSum(), po.GetAmp(), 1e6 * po.GetPulseLength());
 			f = true;
 		}
 	}
