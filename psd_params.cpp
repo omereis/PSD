@@ -179,6 +179,7 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 	SetSaveRaw (obj["print_raw"].asInt());
 	SetRawFile (obj["raw_file"].asString());
 	SetAvgWindow (obj["filter_window"].asInt());
+	SetTimeWindowThreshold (obj["TimeWindowThreshold"].asFloat());
 	// time_window_threshold
 	m_trigger.LoadFromJson(obj["trigger"]);
 	m_sampling_params.LoadFromJson (obj["sampling"]);
@@ -187,18 +188,23 @@ bool TPsdParams::LoadFromJson (const string &strJson)
 //-----------------------------------------------------------------------------
 void TPsdParams::print ()
 {
-	printf ("Samples: %d\n", GetSamples ());
-	printf ("Iterations: %d\n", GetIterations());
-	printf ("Short Buffer: %s\n", FormatEngineeringUnits (GetShort()).c_str());
-	printf ("Long Buffer: %s\n", FormatEngineeringUnits (GetLong ()).c_str());
-	printf ("PSD output file: '%s'\n", GetPsdFile().c_str());
-	printf ("Pulses to save: %d\n", GetPulses ());
-	printf ("Raw signals to save: %d\n", GetSaveRaw ());
-	printf ("Raw File Name: '%s'\n", GetRawFile().c_str());
-	printf ("Trigger:\n%s\n", m_trigger.AsString().c_str());
-	printf ("Sampling:\n%s\n", m_sampling_params.AsString().c_str());
-	printf ("Input Tau: %g microSeconds\n", GetInputTau() * 1e6);
-	printf ("Input Voltage: %g millivolts\n", GetInputVoltage() * 1e3); 
+	print (stdout);
+}
+void TPsdParams::print (FILE* file)
+{
+	fprintf (file, "Samples: %d\n", GetSamples ());
+	fprintf (file, "Iterations: %d\n", GetIterations());
+	fprintf (file, "Short Buffer: %s\n", FormatEngineeringUnits (GetShort()).c_str());
+	fprintf (file, "Long Buffer: %s\n", FormatEngineeringUnits (GetLong ()).c_str());
+	fprintf (file, "PSD output file: '%s'\n", GetPsdFile().c_str());
+	fprintf (file, "Pulses to save: %d\n", GetPulses ());
+	fprintf (file, "Raw signals to save: %d\n", GetSaveRaw ());
+	fprintf (file, "Raw File Name: '%s'\n", GetRawFile().c_str());
+	fprintf (file, "Trigger:\n%s\n", m_trigger.AsString().c_str());
+	fprintf (file, "Sampling:\n%s\n", m_sampling_params.AsString().c_str());
+	fprintf (file, "Input Tau: %g microSeconds\n", GetInputTau() * 1e6);
+	fprintf (file, "Input Voltage: %g millivolts\n", GetInputVoltage() * 1e3); 
+	fprintf (file, "Time Window Threshold: %g\n", GetTimeWindowThreshold());
 }
 //-----------------------------------------------------------------------------
 void TPsdParams::SetPulses (int nPulses)

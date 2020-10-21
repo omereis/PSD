@@ -10,12 +10,14 @@
     },
     "samples" : 1000,
     "samplim" : 6250,
-    "iterations" : 1000,
+    "iterations" : 10,
+    "tmp_iterations" : 1000,
     "short" : 500e-9,
     "long" : 1e-6,
 	"pulses" : 10,
 	"print_raw" : 10,
 	"raw_file" : "signals.csv",
 	"filter_window" : 7,
-	"time_window_threshold" : 1e-3
+	"time_window_threshold" : 1e-3,
+	"TimeWindowThreshold" : 10
 }

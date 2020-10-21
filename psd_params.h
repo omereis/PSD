@@ -34,6 +34,7 @@ public:
 // I/O
 	bool LoadFromJson (const string &strJson);
 	void print ();
+	void print (FILE* file);
 
 	void SetTriggerLevel (float rTrigger);
 // getters/setters

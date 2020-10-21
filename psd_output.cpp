@@ -112,7 +112,7 @@ bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 	tPulse = dLong = dShort = t = tEnd = dTotal = 0;
 	n=0;
 	fInPulse = false;
-	for (i=vFiltered.begin() ; i != vFiltered.end() ; i++) {
+	for (i=vFiltered.begin(), n=0 ; i != vFiltered.end() ; i++, n++) {
 		dTotal += *i;
 		rMax = max (rMax, *i);
 		if (fInPulse) {
@@ -152,8 +152,51 @@ bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 		m_vPsdParams.push_back (out_params);
 		fAdded = true;
 	}
-	else
+/*
+	else {
 		fAdded = false;
+		static bool flag = false;
+		TFloatVec::iterator iSig, iFilt;
+
+		if (flag == false) {
+			flag = true;
+			FILE *file = fopen ("h.csv", "w+");
+			fprintf (file, "Signal, Filtered\n");
+			for (iSig=vSignal.begin(), iFilt=vFiltered.begin() ; iSig != vSignal.end() ; iSig++, iFilt++)
+				fprintf (file, "%g,%g\n", *iSig, *iFilt);
+			tPulse = 0;
+			fInPulse = false;
+			TFloatVec::iterator iFound;
+			float fDebug, fThreshold;
+			for (i=vFiltered.begin(), n=0 ; i != vFiltered.end() ; i++, n++) {
+				fDebug = *i;
+				fThreshold = m_params.GetTimeWindowThreshold () * 1e3;
+				if (fDebug >= fThreshold) {
+					if (!fInPulse) {
+				//if ((!fInPulse) && (fDebug >= (fThreshold * 1e3))) {
+				//if ((!fInPulse) && (fDebug > m_params.GetTimeWindowThreshold ())) {
+				//if ((!fInPulse) && (*i > m_params.GetTimeWindowThreshold ())) {
+						tStart = t;
+						fInPulse = true;
+						i0 = n;
+						iFound = i;
+					}
+				}
+			}
+			fprintf (file, "InPulse: %d\n", (int) fInPulse);
+			fprintf (file, "Start: %g\n", tStart);
+			fprintf (file, "i0: %d\n", i0);
+			m_params.print (file);
+			fprintf (file, "Time window threshold: %g\n", fThreshold);
+			//if (iFound != 0)
+				fprintf (file, "Value at found: %g\n", *iFound);
+			//else
+				//fprintf (file, "Value at found: NULL\n");
+			fclose (file);
+		}
+		//printf ("Wrong pulse length: %g\n", tPulse);
+	}
+*/
 	return (fAdded);
 }
 //-----------------------------------------------------------------------------

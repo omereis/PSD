@@ -508,13 +508,20 @@ bool read_fast_analog (float *buff, uint32_t buff_size, int16_t *ai16Buf, const 
 		//rp_AcqGetDataV(RP_CH_1, nTrigPos-100, &buff_size, buff); // 80 nSec before trigger
 		rp_AcqGetDataRaw(RP_CH_1, nTrigPos-100, &buff_size, aiBuffer); // 80 nSec before trigger
 		static bool fWritten = false;
+		//for (int n=0 ; n < (int) buff_size ; n++)
+			//aiBuffer[n] += 150;//buff[n] = adc_convert.offset + adc_convert.gain * (float) (aiBuffer[n]);//25.336;
+		float dMin = 1e10;
+		for (int n=0 ; n < (int) buff_size ; n++) {
+			buff[n] = adc_convert.offset + adc_convert.gain * (float) (aiBuffer[n]);//25.336;
+			dMin = min (dMin, buff[n]);
+		}
 		for (int n=0 ; n < (int) buff_size ; n++)
-			buff[n] = adc_convert.offset + adc_convert.gain * (float) aiBuffer[n];//25.336;
+			buff[n] -= dMin;
 		if (!fWritten) {
 			fWritten = true;
 			FILE *fileDebug = fopen ("raw.csv", "w+");
 			for (int m=0 ; m < (int) buff_size ; m++)
-				fprintf (fileDebug, "%d,%g\n", aiBuffer[m], buff[m]);
+				fprintf (fileDebug, "%d,%g\n", aiBuffer[m] + 150, buff[m]);
 			fclose (fileDebug);
 		}
 		free (aiBuffer);
@@ -543,8 +550,11 @@ bool LoadAdcParams (TAdcConvert &adc_convert)
 		printf ("Error loading A/D coeficients:\n%s\n", strErr.c_str());
 		exit (-1);
 	}
-	else
+	else {
 		printf("A/D Coeficients Loaded\n");
+		printf ("Gain: %g\n", adc_convert.gain);
+		printf ("Offset: %g\n", adc_convert.offset);
+	}
 	return (f);
 }
 //-----------------------------------------------------------------------------
