@@ -101,18 +101,20 @@ bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 	float rMax = 0;
 	TPsdOutParams out_params;
 	bool fInPulse, fAdded;
-	int n, i0=0, iEnd=0;
+	int n, i0=-1, iEnd=0;
 
 	ConvertSamples (buff, buff_size, vSignal);
 	MoveAverageFilter(vSignal, vFiltered, m_params.GetAvgWindow());
+	//printf ("Vector filtered\n");
 	if ((int) PulsesCount() < m_params.GetSaveRaw ()) {
 		m_mtxOut.push_back (vSignal);
 		m_mtxFiltered.push_back (vFiltered);
 	}
-	tPulse = dLong = dShort = t = tEnd = dTotal = 0;
+	dLong = dShort = t = tEnd = dTotal = 0;
+	tPulse = -1;
 	n=0;
 	fInPulse = false;
-	for (i=vFiltered.begin(), n=0 ; i != vFiltered.end() ; i++, n++) {
+	for (i=vFiltered.begin(), n=0 ; (i != vFiltered.end()) && (tPulse < 0) ; i++, n++) {
 		dTotal += *i;
 		rMax = max (rMax, *i);
 		if (fInPulse) {
@@ -130,7 +132,8 @@ bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 		}
 		else {
 		//if (!fInPulse) {
-			if ((tPulse == 0) && (*i > m_params.GetTimeWindowThreshold ())) {
+			if (*i > m_params.GetTimeWindowThreshold ()) {
+			//if ((tPulse == 0) && (*i > m_params.GetTimeWindowThreshold ())) {
 				tStart = t;
 				fInPulse = true;
 				i0 = n;
@@ -139,11 +142,12 @@ bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 		t += 8e-9;
 		n++;
 	}
-	if (tPulse >= 500e-9) {
+	if (tPulse >= 5e-9) {
 		out_params.SetLongSum (dLong);
 		out_params.SetShortSum (dShort);
 		out_params.SetAmp (rMax);
 		out_params.SetPulseLength (tPulse);
+		//printf ("Debug: Pulse Length: %g\n", tPulse);
 		out_params.SetStart (tStart);
 		out_params.SetEnd (tEnd);
 		out_params.i0 = i0;
@@ -151,9 +155,10 @@ bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 		out_params.m_dTotal = dTotal;
 		m_vPsdParams.push_back (out_params);
 		fAdded = true;
+		//printf ("Pulse added\n");
 	}
-/*
 	else {
+		//printf ("Pulse NOT added\n");
 		fAdded = false;
 		static bool flag = false;
 		TFloatVec::iterator iSig, iFilt;
@@ -161,42 +166,56 @@ bool TPsdOutput::HandleNew(float *buff, uint32_t buff_size)
 		if (flag == false) {
 			flag = true;
 			FILE *file = fopen ("h.csv", "w+");
+			printf ("H file opened\n");
 			fprintf (file, "Signal, Filtered\n");
 			for (iSig=vSignal.begin(), iFilt=vFiltered.begin() ; iSig != vSignal.end() ; iSig++, iFilt++)
 				fprintf (file, "%g,%g\n", *iSig, *iFilt);
-			tPulse = 0;
+			//printf ("Filtered vector printed to H\n");
+			fprintf (file, "\nDebug\n");
+			fprintf (file, "Found pulse length: %g\n", tPulse);
+			fprintf (file, "Start index: %d\n", i0);
+			tPulse = -1;
 			fInPulse = false;
 			TFloatVec::iterator iFound;
 			float fDebug, fThreshold;
-			for (i=vFiltered.begin(), n=0 ; i != vFiltered.end() ; i++, n++) {
+			int idxPass = -1, idxEnd=-1;
+			fThreshold = m_params.GetTimeWindowThreshold ();
+			for (i=vFiltered.begin(), n=0, t=0 ; (i != vFiltered.end()) && (tPulse < 0) ; i++, n++, t += 8e-9) {
 				fDebug = *i;
-				fThreshold = m_params.GetTimeWindowThreshold () * 1e3;
-				if (fDebug >= fThreshold) {
-					if (!fInPulse) {
-				//if ((!fInPulse) && (fDebug >= (fThreshold * 1e3))) {
-				//if ((!fInPulse) && (fDebug > m_params.GetTimeWindowThreshold ())) {
-				//if ((!fInPulse) && (*i > m_params.GetTimeWindowThreshold ())) {
+				if (!fInPulse) {
+					if (fDebug >= fThreshold) {
+						if (idxPass < 0)
+							idxPass = n;
+					//if (!fInPulse) {
 						tStart = t;
 						fInPulse = true;
 						i0 = n;
 						iFound = i;
 					}
 				}
+				else { // in pulse
+					if (fDebug < fThreshold) {
+						tPulse = t - tStart;
+						idxEnd = n;
+					}
+				}
 			}
 			fprintf (file, "InPulse: %d\n", (int) fInPulse);
+			fprintf (file, "Pass index: %d\n", idxPass);
 			fprintf (file, "Start: %g\n", tStart);
 			fprintf (file, "i0: %d\n", i0);
+			fprintf (file, "Pulse Length: %g nano\n", tPulse * 1e9);
+			fprintf (file, "Pulse end index: %d\n", idxEnd);
 			m_params.print (file);
 			fprintf (file, "Time window threshold: %g\n", fThreshold);
 			//if (iFound != 0)
-				fprintf (file, "Value at found: %g\n", *iFound);
+				//fprintf (file, "Value at found: %g\n", *iFound);
 			//else
 				//fprintf (file, "Value at found: NULL\n");
 			fclose (file);
 		}
 		//printf ("Wrong pulse length: %g\n", tPulse);
 	}
-*/
 	return (fAdded);
 }
 //-----------------------------------------------------------------------------

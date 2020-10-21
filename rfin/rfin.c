@@ -51,9 +51,8 @@ int main(int argc, char **argv)
         rp_AcqGetDecimation(&decCurrent);
 		print_decimation (decCurrent);
         //rp_AcqSetDecimation(RP_DEC_1);
-        rp_AcqSetTriggerLevel(RP_CH_1, 1e-3); //Trig level is set in Volts while in SCPI
-		//rp_AcqSetSamplingRate (RP_SMP_125M);
-		rp_AcqSetSamplingRate (RP_SMP_15_625M);
+        rp_AcqSetTriggerLevel(RP_CH_1, -15e-3); //Trig level is set in Volts while in SCPI
+		rp_AcqSetSamplingRate (RP_SMP_125M);
 		
         rp_AcqSetTriggerDelay(0);
 

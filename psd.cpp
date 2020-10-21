@@ -125,14 +125,17 @@ int main(int argc, char **argv)
 	//int16_t *ai16Buf = new int16_t[buff_size];
 	clock_t tStart, tAccumulated;
 	InitiateSampling (m_params);
+	//printf ("Starting iterations\n");
 	for (n=0, nValids=0 ; n < m_params.GetIterations() ; /*n++*/) {
 		tAccumulated = 0;
 		if (read_fast_analog (buff, buff_size, NULL, adc_convert)) {
+			//printf ("Input read\n");
 		//if (read_fast_analog (buff, buff_size, ai16Buf)) {
 			nValids++;
 			tStart = clock ();
 			if (psd_results.HandleNew(buff, buff_size))
 				n++;
+			//printf ("New vector handled\n");
 			tAccumulated += (clock() - tStart);
 		}
 		printf ("%d iterations completed\r", n);
