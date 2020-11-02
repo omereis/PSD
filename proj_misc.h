@@ -6,7 +6,8 @@
 #include <vector>
 using namespace std;
 
-#include "redpitaya/rp.h"
+#include "rp.h"
+//#include "redpitaya/rp.h"
 
 string FormatWithComma (int num);
 rp_acq_sampling_rate_t rate_from_name (const string &strName);

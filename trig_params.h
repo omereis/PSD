@@ -4,7 +4,8 @@
 #include <string>
 using namespace std;
 #include <jsoncpp/json/json.h>
-#include "redpitaya/rp.h"
+#include "rp.h"
+//#include "redpitaya/rp.h"
 
 class TTriggerParams {
 public:

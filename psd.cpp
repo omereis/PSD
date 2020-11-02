@@ -17,7 +17,8 @@
 #include <string>
 using namespace std;
 
-#include "redpitaya/rp.h"
+#include "rp.h"
+//#include "redpitaya/include/rp.h"
 #include "psd_params.h"
 #include "psd_output.h"
 #include "proj_misc.h"
@@ -168,7 +169,7 @@ void InitiateSampling (TPsdParams &params)
 		ExitWithError ("Error in Reset. Code: %d\n", nCode);
 	if ((nCode = rp_AcqSetDecimation(params.GetSamplingParams().GetDecimation())) != RP_OK)
 		ExitWithError ("Error in Reset. Code: %d\n", nCode);
-	if ((nCode = rp_AcqSetTriggerLevel(RP_CH_1, params.GetTrigger().GetLevel())) != RP_OK)
+	if ((nCode = rp_AcqSetTriggerLevel(RP_T_CH_1, params.GetTrigger().GetLevel())) != RP_OK)
 		ExitWithError ("Error in Reset. Code: %d\n", nCode);
 	if ((nCode = rp_AcqSetSamplingRate (RP_SMP_125M)) != RP_OK)
 		ExitWithError ("Error in Reset. Code: %d\n", nCode);
@@ -197,7 +198,7 @@ int read_input_volts (float *buff, uint32_t buff_size, int *pnWaits, int16_t *ai
 	rp_AcqSetTriggerSrc(RP_TRIG_SRC_CHA_PE);
 	rp_AcqReset();
 	rp_AcqSetDecimation(RP_DEC_1);
-	rp_AcqSetTriggerLevel(RP_CH_1, 10e-3); //Trig level is set in Volts while in SCPI
+	rp_AcqSetTriggerLevel(RP_T_CH_1, 10e-3); //Trig level is set in Volts while in SCPI
 	rp_AcqSetSamplingRate (RP_SMP_125M);
 		
 	rp_AcqSetTriggerDelay(0);

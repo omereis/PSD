@@ -3,7 +3,8 @@
 
 #include "bimam_types.h"
 #include <string>
-#include "redpitaya/rp.h"
+#include "rp.h"
+//#include "redpitaya/rp.h"
 #include "trig_params.h"
 #include "sampling_params.h"
 using namespace std;

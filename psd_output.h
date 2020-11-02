@@ -6,7 +6,8 @@ using namespace std;
 #include "bimam_types.h"
 #include "psd_params.h"
 #include "psd_out_params.h"
-#include "redpitaya/rp.h"
+#include "rp.h"
+//#include "redpitaya/rp.h"
 #include <stdio.h>
 
 class TPsdOutput {
