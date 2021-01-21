@@ -1,0 +1,12 @@
+Create new directory. E.g. PSD:
+mkdir ~/psd
+
+Clone git repo from https://github.com/omereis/PSD
+cd ~/psd
+git clone https://github.com/omereis/PSD .
+
+Install JSONCpp library
+apt install -y libjsoncpp-dev
+
+Define shared library path for librp.so. Also, copy this line to the end of ~/.bashrc:
+export LD_LIBRARY_PATH=/opt/redpitaya/lib/
