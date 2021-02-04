@@ -11,7 +11,7 @@ SRCS = $(subst .o,.c, $(OBJS)))
 TARGET = psd
 
 CFLAGS  = -g -Wall -Werror
-CFLAGS +=  -std=c++0x
+CFLAGS +=  -std=c++11
 CFLAGS += -I../../api/include
 CFLAGS += -I/opt/redpitaya/include
 CFLAGS += -DVERSION=$(VERSION) -DREVISION=$(REVISION) 
