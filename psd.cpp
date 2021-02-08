@@ -506,7 +506,7 @@ bool read_fast_analog (float *buff, uint32_t buff_size, int16_t *ai16Buf, const 
 		}
 	}
 	if (fTrigger) {
-		fprintf (stderr, "Found Trigger\n");
+		//fprintf (stderr, "Found Trigger\n");
 		uint32_t nTrigPos;
 		int16_t *aiBuffer = (int16_t*) calloc(buff_size, sizeof(aiBuffer[0]));
 		rp_AcqGetWritePointerAtTrig (&nTrigPos);
