@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
-#include "redpitaya/rp.h"
+//#include "redpitaya/rp.h"
+#include "rp.h"
 #include "fpga.h"
 
 rp_acq_decimation_t GetCmdLineDecimation (int argc, char *argv[]);
